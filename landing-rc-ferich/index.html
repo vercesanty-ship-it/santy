@@ -160,6 +160,38 @@
   }
   .product-chip:hover{color:#fff;border-color:var(--accent);background:var(--surface-2)}
 
+  /* ===== PRECIOS ===== */
+  .precios-accordion{display:flex;flex-direction:column;gap:14px}
+  .precio-cat{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);
+    overflow:hidden;transition:background var(--transition),border-color var(--transition);
+  }
+  .precio-cat-head{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:22px 26px;cursor:pointer;background:none;border:none;width:100%;text-align:left;
+    font-family:var(--font-display);color:var(--text);
+  }
+  .precio-cat-head h3{font-size:1.05rem;font-weight:600}
+  .precio-cat-head .count{font-size:.8rem;color:var(--text-dim);font-family:var(--font-body);font-weight:500}
+  .precio-cat-head .chevron{transition:transform .3s ease;color:var(--accent-light);flex-shrink:0}
+  .precio-cat.open .chevron{transform:rotate(180deg)}
+  .precio-cat-body{max-height:0;overflow:hidden;transition:max-height .4s ease}
+  .precio-cat.open .precio-cat-body{max-height:2400px}
+  .precio-table{width:100%;border-collapse:collapse}
+  .precio-table tr{border-top:1px solid var(--border)}
+  .precio-table td{padding:14px 26px;font-size:.9rem;color:var(--text-dim);vertical-align:top}
+  .precio-table td.item-name{color:var(--text);font-weight:600;width:34%}
+  .precio-table td.item-detail{width:40%}
+  .precio-table td.item-price{
+    text-align:right;white-space:nowrap;font-family:var(--font-display);font-weight:600;color:var(--accent-light);
+  }
+  .precio-table td.item-price small{display:block;font-family:var(--font-body);font-weight:400;color:var(--text-dim);font-size:.72rem}
+  @media(max-width:700px){
+    .precio-table td{padding:12px 16px;display:block;width:auto !important}
+    .precio-table td.item-price{text-align:left}
+    .precio-table tr{display:block;padding:6px 0}
+  }
+
   /* ===== PROCESS ===== */
   .process-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;counter-reset:step}
   .step{position:relative;padding-top:10px}
@@ -242,6 +274,7 @@
     <ul class="nav-links">
       <li><a href="#servicios">Servicios</a></li>
       <li><a href="#productos">Productos</a></li>
+      <li><a href="#precios">Precios</a></li>
       <li><a href="#proceso">Cómo trabajamos</a></li>
       <li><a href="#contacto">Contacto</a></li>
     </ul>
@@ -313,6 +346,17 @@
       <div class="product-chip" data-reveal>Accesorios</div>
       <div class="product-chip" data-reveal>Merchandising</div>
     </div>
+  </div>
+</section>
+
+<section id="precios">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <span class="eyebrow">Lista de precios</span>
+      <h2>Precios claros, sin sorpresas</h2>
+      <p id="precios-updated">Lista de precios actualizada. Los valores son por metro lineal o por unidad según el producto — para medidas o cantidades especiales, consultanos.</p>
+    </div>
+    <div id="precios-accordion" class="precios-accordion"></div>
   </div>
 </section>
 
@@ -393,6 +437,128 @@
 </footer>
 
 <script>
+  const fmt = n => '$' + n.toLocaleString('es-AR');
+
+  const PRICE_LIST = [
+    {
+      cat: "DTF",
+      items: [
+        { name: "DTF UV adhesivo", detail: "58 x 100 cm", price: 26500, unit: "por metro lineal" },
+        { name: "DTF textil", detail: "58 x 100 cm", price: 10000, unit: "por metro lineal" },
+        { name: "DTF gliter", detail: "58 x 100 cm, mínimo 3 mts", price: 15000, unit: "por metro lineal" },
+        { name: "DTF dorado / plateado", detail: "58 x 100 cm, mínimo 3 mts", price: 17000, unit: "por metro lineal" },
+        { name: "DTF bolsillo", detail: "10x8 cm, solo material, mínimo 12 un.", price: 600, unit: "por unidad" },
+        { name: "DTF espalda o frente", detail: "35x28 cm, solo material, x12 un.", price: 2200, unit: "por unidad" },
+        { name: "DTF espalda o frente", detail: "28x30 cm, solo material, x12 un.", price: 2000, unit: "por unidad" },
+        { name: "DTF espalda o frente", detail: "40x28 cm, solo material, x12 un.", price: 2500, unit: "por unidad" }
+      ]
+    },
+    {
+      cat: "Sublimado",
+      items: [
+        { name: "Papel sublimación", detail: "Epson original, 1.10 m de ancho", price: 3500, unit: "por metro lineal" }
+      ]
+    },
+    {
+      cat: "Termotransferible",
+      items: [
+        { name: "Termotransferible", detail: "Solo material, variedad de colores, 50 cm de ancho", price: 9000, unit: "por metro lineal" },
+        { name: "Termotransferible", detail: "Material y corte", price: 16000, unit: "por metro lineal" },
+        { name: "Termotransferible", detail: "Cortado y despuntillado básico", price: 20000, unit: "por metro lineal" },
+        { name: "Termo flúor / dorado / plateado", detail: "50 cm, solo material", price: 12000, unit: "por metro lineal" },
+        { name: "Termo flúor / dorado / plateado", detail: "Material y corte", price: 20000, unit: "por metro lineal" },
+        { name: "Termo flúor / dorado / plateado", detail: "Cortado y despuntillado básico", price: 25000, unit: "por metro lineal" },
+        { name: "Termo reflectivo", detail: "Alta resistencia, 50 cm, solo material", price: 17000, unit: "por metro lineal" },
+        { name: "Termo reflectivo", detail: "Material y corte", price: 27000, unit: "por metro lineal" },
+        { name: "Termo reflectivo", detail: "Cortado y despuntillado básico", price: 32000, unit: "por metro lineal" },
+        { name: "Termo holográfico", detail: "Material y corte", price: 26000, unit: "por metro lineal" },
+        { name: "Termo flock", detail: "Material y corte", price: 38000, unit: "por metro lineal" },
+        { name: "Termo gliter", detail: "Material y corte", price: 32000, unit: "por metro lineal" },
+        { name: "Termo puff", detail: "Material y corte (blanco / negro / gris)", price: 25000, unit: "por metro lineal" },
+        { name: "Termo metalizado espejo", detail: "Material y corte", price: 25000, unit: "por metro lineal" },
+        { name: "Termo flex c/espesor", detail: "A pedido, consultar 60 cm", price: 38000, unit: "por metro lineal" }
+      ]
+    },
+    {
+      cat: "Vinilo",
+      items: [
+        { name: "Vinilo de corte esmerilado plata", detail: "Material y corte, 60 cm", price: 25000, unit: "por metro lineal" },
+        { name: "Vinilo adhesivo esmerilado cristal", detail: "Material y corte, 60 cm", price: 19000, unit: "por metro lineal" },
+        { name: "Vinilo adhesivo de corte", detail: "Material y corte, 60 cm", price: 16000, unit: "por metro lineal" },
+        { name: "Vinilo adhesivo de corte", detail: "Solo material", price: 10000, unit: "por metro lineal" },
+        { name: "Adhesivo corte y soporte", detail: "Material, corte y soporte, sin despuntillar", price: 19000, unit: "por metro lineal" },
+        { name: "Vinilo adhesivo impreso", detail: "Impresión y corte", price: 21000, unit: "por metro lineal" },
+        { name: "Vinilo adhesivo impreso", detail: "Solo impresión", price: 20000, unit: "por metro lineal" }
+      ]
+    },
+    {
+      cat: "Lona",
+      items: [
+        { name: "Lona front mate", detail: "1,2 mts", price: 22000, unit: "por metro lineal" },
+        { name: "Lona front mate", detail: "1 mt", price: 20000, unit: "por metro lineal" },
+        { name: "Lona bolsillo", detail: "Cada lado", price: 2500, unit: "por unidad" },
+        { name: "Lona argolla", detail: "Cada una", price: 3000, unit: "por unidad" }
+      ]
+    },
+    {
+      cat: "Stickers y papel transfer",
+      items: [
+        { name: "Papel transfer", detail: "Impresión láser A4", price: 4500, unit: "por unidad" },
+        { name: "Papel transfer", detail: "Impresión láser A3", price: 7500, unit: "por unidad" }
+      ]
+    },
+    {
+      cat: "Estampados para ropa",
+      items: [
+        { name: "Remera algodón peinado", detail: "Mínimo 12 un.", price: 7000, unit: "por unidad" },
+        { name: "Remera modal", detail: "Mínimo 12 un.", price: 6000, unit: "por unidad" },
+        { name: "Bajada de plancha", detail: "Hasta 40x50, servicio cada una", price: 1600, unit: "por servicio" },
+        { name: "Bajada de plancha", detail: "90x70, servicio cada una", price: 5000, unit: "por servicio" },
+        { name: "Bordado de gorra", detail: "Base a un color, 6x9, mínimo 12 un.", price: 4500, unit: "a cotizar" }
+      ]
+    },
+    {
+      cat: "Accesorios y merchandising",
+      items: [
+        { name: "Pins", detail: "55 mm, mínimo 25 un.", price: 600, unit: "por unidad" },
+        { name: "Llaveros", detail: "55 mm, mínimo 25 un.", price: 1100, unit: "por unidad" },
+        { name: "Pins espejo", detail: "55 mm, mínimo 25 un.", price: 2000, unit: "por unidad" },
+        { name: "Destapador", detail: "55 mm, mínimo 25 un.", price: 1500, unit: "por unidad" },
+        { name: "Escudos con relieve", detail: "8 cm, mínimo 10 un.", price: 4500, unit: "por unidad" },
+        { name: "Bandera con tela incluida", detail: "Set poliéster 1x1,5 mts, mínimo 6 un.", price: 25000, unit: "por unidad" },
+        { name: "Papel y calandra", detail: "A partir de 20 mts", price: 4500, unit: "consultar" }
+      ]
+    }
+  ];
+
+  function renderPrecios(){
+    const wrap = document.getElementById('precios-accordion');
+    wrap.innerHTML = PRICE_LIST.map((group, i) => `
+      <div class="precio-cat${i===0?' open':''}">
+        <button type="button" class="precio-cat-head" data-toggle-cat>
+          <h3>${group.cat}</h3>
+          <span class="count">${group.items.length} ítem${group.items.length>1?'s':''}</span>
+          <span class="chevron">▾</span>
+        </button>
+        <div class="precio-cat-body">
+          <table class="precio-table"><tbody>
+            ${group.items.map(it => `
+              <tr>
+                <td class="item-name">${it.name}</td>
+                <td class="item-detail">${it.detail}</td>
+                <td class="item-price">${fmt(it.price)}<small>${it.unit}</small></td>
+              </tr>`).join('')}
+          </tbody></table>
+        </div>
+      </div>
+    `).join('');
+
+    wrap.querySelectorAll('[data-toggle-cat]').forEach(btn=>{
+      btn.addEventListener('click', ()=> btn.closest('.precio-cat').classList.toggle('open'));
+    });
+  }
+  renderPrecios();
+
   const BRANDS = {
     rc: {
       name: "RC Publicidad",

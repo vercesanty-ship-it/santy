@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es" data-brand="rc">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RC Publicidad &amp; Ferich Marketing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --font-display:'Space Grotesk',sans-serif;
+    --font-body:'Inter',sans-serif;
+    --radius-sm:10px;--radius-md:16px;--radius-lg:26px;
+    --transition:.5s cubic-bezier(.4,0,.2,1);
+  }
+
+  html[data-brand="rc"]{
+    --primary:#FF0080; --primary-dark:#CC0066; --primary-light:#FF3399;
+    --accent:#00B4D8; --accent-light:#48CAE4;
+    --bg:#0a0a0f; --bg-2:#12121f; --bg-3:#1a1a2e;
+    --surface:#171728; --surface-2:#20203a;
+    --text:#f5f5fa; --text-dim:#aaaac0;
+    --border:rgba(255,255,255,.08);
+    --gradient:linear-gradient(135deg,var(--primary),var(--accent));
+    --shadow-glow:0 0 40px rgba(255,0,128,.35);
+    --brand-name:"RC Publicidad";
+  }
+
+  html[data-brand="ferich"]{
+    --primary:#A12157; --primary-dark:#7A1841; --primary-light:#F38487;
+    --accent:#DC8D48; --accent-light:#F0B979;
+    --bg:#0f1414; --bg-2:#151c1c; --bg-3:#1c2626;
+    --surface:#16201f; --surface-2:#1f2c2b;
+    --text:#f7f5f0; --text-dim:#b9c4c1;
+    --border:rgba(175,201,204,.12);
+    --gradient:linear-gradient(135deg,var(--accent),var(--primary));
+    --shadow-glow:0 0 40px rgba(220,141,72,.30);
+    --brand-name:"Ferich Marketing";
+  }
+
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:var(--font-body);
+    background:var(--bg);
+    color:var(--text);
+    transition:background var(--transition),color var(--transition);
+    overflow-x:hidden;
+  }
+  img{max-width:100%;display:block}
+  a{color:inherit;text-decoration:none}
+  ul{list-style:none}
+  .container{width:min(1180px,92%);margin-inline:auto}
+  section{padding:96px 0}
+  h1,h2,h3{font-family:var(--font-display);line-height:1.15}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent-light);font-weight:600;margin-bottom:14px;
+    transition:color var(--transition);
+  }
+  .eyebrow::before{content:"";width:22px;height:2px;background:var(--gradient)}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:10px;
+    padding:15px 30px;border-radius:100px;font-weight:600;font-size:.95rem;
+    border:1px solid transparent;cursor:pointer;transition:transform .25s ease,box-shadow .25s ease,background var(--transition);
+  }
+  .btn-primary{background:var(--gradient);color:#fff;box-shadow:var(--shadow-glow)}
+  .btn-primary:hover{transform:translateY(-2px)}
+  .btn-ghost{border-color:var(--border);color:var(--text)}
+  .btn-ghost:hover{border-color:var(--accent)}
+
+  /* ===== NAV ===== */
+  header{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    backdrop-filter:blur(14px);
+    background:color-mix(in srgb, var(--bg) 78%, transparent);
+    border-bottom:1px solid var(--border);
+    transition:background var(--transition),border-color var(--transition);
+  }
+  nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+  .logo-wrap{display:flex;align-items:center;gap:12px;height:44px}
+  .logo-wrap img{height:100%;width:auto;object-fit:contain;transition:opacity .4s ease}
+  .nav-links{display:flex;gap:34px;font-size:.92rem;font-weight:500}
+  .nav-links a{color:var(--text-dim);transition:color .25s ease}
+  .nav-links a:hover{color:var(--text)}
+  .nav-right{display:flex;align-items:center;gap:18px}
+
+  /* Brand switch */
+  .brand-switch{
+    display:flex;padding:4px;border-radius:100px;
+    background:var(--surface);border:1px solid var(--border);
+    transition:background var(--transition),border-color var(--transition);
+  }
+  .brand-switch button{
+    padding:9px 18px;border-radius:100px;border:none;background:transparent;
+    font-family:var(--font-body);font-weight:600;font-size:.82rem;color:var(--text-dim);
+    cursor:pointer;transition:color .25s ease;white-space:nowrap;
+  }
+  .brand-switch button.active{color:#fff;background:var(--gradient)}
+  .menu-toggle{display:none;background:none;border:none;color:var(--text);font-size:1.4rem;cursor:pointer}
+
+  /* ===== HERO ===== */
+  .hero{
+    padding:190px 0 110px;position:relative;
+    background:
+      radial-gradient(60% 50% at 15% 0%, color-mix(in srgb, var(--primary) 22%, transparent), transparent 70%),
+      radial-gradient(50% 45% at 100% 20%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 70%);
+    transition:background var(--transition);
+  }
+  .hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:60px;align-items:center}
+  .hero h1{font-size:clamp(2.4rem,4.6vw,3.9rem);font-weight:700;margin-bottom:22px}
+  .hero h1 .grad{
+    background:var(--gradient);-webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .hero p{color:var(--text-dim);font-size:1.1rem;max-width:520px;margin-bottom:36px}
+  .hero-actions{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:44px}
+  .hero-stats{display:flex;gap:40px;flex-wrap:wrap}
+  .hero-stats div strong{display:block;font-family:var(--font-display);font-size:1.7rem;
+    background:var(--gradient);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero-stats div span{font-size:.82rem;color:var(--text-dim)}
+  .hero-visual{
+    position:relative;aspect-ratio:1/1;border-radius:var(--radius-lg);
+    background:var(--surface);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+    box-shadow:var(--shadow-glow);
+    transition:background var(--transition),border-color var(--transition),box-shadow var(--transition);
+  }
+  .hero-visual img{width:60%;filter:drop-shadow(0 10px 30px rgba(0,0,0,.4))}
+  .hero-visual::after{
+    content:"";position:absolute;inset:0;background:var(--gradient);opacity:.12;
+  }
+
+  /* ===== SECTION HEAD ===== */
+  .section-head{max-width:640px;margin-bottom:56px}
+  .section-head h2{font-size:clamp(1.8rem,3vw,2.5rem);font-weight:700;margin-bottom:14px}
+  .section-head p{color:var(--text-dim);font-size:1.05rem}
+
+  /* ===== SERVICES ===== */
+  .services-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
+  .service-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);
+    padding:30px 26px;transition:transform .3s ease,border-color .3s ease,background var(--transition);
+  }
+  .service-card:hover{transform:translateY(-6px);border-color:var(--accent)}
+  .service-card .icon{
+    width:52px;height:52px;border-radius:14px;background:var(--gradient);
+    display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:20px;
+  }
+  .service-card h3{font-size:1.08rem;margin-bottom:10px;font-weight:600}
+  .service-card p{color:var(--text-dim);font-size:.92rem;line-height:1.55}
+
+  /* ===== PRODUCTS ===== */
+  .products{background:var(--bg-2);transition:background var(--transition)}
+  .products-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+  .product-chip{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:22px 10px;text-align:center;font-size:.86rem;font-weight:600;color:var(--text-dim);
+    transition:all .25s ease;
+  }
+  .product-chip:hover{color:#fff;border-color:var(--accent);background:var(--surface-2)}
+
+  /* ===== PROCESS ===== */
+  .process-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;counter-reset:step}
+  .step{position:relative;padding-top:10px}
+  .step::before{
+    counter-increment:step;content:"0" counter(step);
+    font-family:var(--font-display);font-size:2.6rem;font-weight:700;
+    background:var(--gradient);-webkit-background-clip:text;background-clip:text;color:transparent;
+    display:block;margin-bottom:14px;opacity:.85;
+  }
+  .step h3{margin-bottom:8px;font-size:1.05rem}
+  .step p{color:var(--text-dim);font-size:.9rem;line-height:1.5}
+
+  /* ===== CTA / CONTACT ===== */
+  .cta{
+    background:var(--gradient);border-radius:var(--radius-lg);padding:70px 60px;
+    display:flex;justify-content:space-between;align-items:center;gap:40px;flex-wrap:wrap;
+    transition:background var(--transition);
+  }
+  .cta h2{color:#fff;font-size:clamp(1.6rem,3vw,2.3rem);max-width:520px}
+  .cta p{color:rgba(255,255,255,.85);margin-top:10px}
+  .cta .btn-ghost{border-color:rgba(255,255,255,.5);color:#fff}
+  .cta .btn-white{background:#fff;color:#111;padding:15px 30px;border-radius:100px;font-weight:700}
+
+  .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:80px}
+  .contact-info h2{font-size:clamp(1.7rem,3vw,2.3rem);margin-bottom:18px}
+  .contact-info p{color:var(--text-dim);margin-bottom:30px}
+  .contact-item{display:flex;gap:16px;align-items:flex-start;margin-bottom:22px}
+  .contact-item .icon{
+    width:44px;height:44px;border-radius:12px;background:var(--surface);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .contact-item h4{font-size:.95rem;margin-bottom:4px}
+  .contact-item span{color:var(--text-dim);font-size:.88rem}
+  .contact-form{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:38px;transition:background var(--transition),border-color var(--transition);
+  }
+  .contact-form input,.contact-form select,.contact-form textarea{
+    width:100%;padding:14px 16px;margin-bottom:16px;border-radius:12px;
+    background:var(--bg-2);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);
+    transition:border-color .25s ease;
+  }
+  .contact-form input:focus,.contact-form select:focus,.contact-form textarea:focus{outline:none;border-color:var(--accent)}
+  .contact-form textarea{resize:vertical;min-height:100px}
+
+  footer{border-top:1px solid var(--border);padding:40px 0;transition:border-color var(--transition)}
+  .footer-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+  .footer-row span{color:var(--text-dim);font-size:.85rem}
+  .footer-brands{display:flex;gap:10px;font-size:.82rem;color:var(--text-dim)}
+  .footer-brands b{color:var(--text)}
+
+  [data-reveal]{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
+  [data-reveal].in{opacity:1;transform:translateY(0)}
+
+  @media(max-width:980px){
+    .hero-grid{grid-template-columns:1fr}
+    .hero-visual{order:-1;max-width:340px;margin-inline:auto}
+    .services-grid{grid-template-columns:repeat(2,1fr)}
+    .products-grid{grid-template-columns:repeat(3,1fr)}
+    .process-grid{grid-template-columns:repeat(2,1fr);row-gap:40px}
+    .contact-grid{grid-template-columns:1fr}
+    .nav-links{display:none}
+    .menu-toggle{display:block}
+  }
+  @media(max-width:560px){
+    section{padding:70px 0}
+    .services-grid{grid-template-columns:1fr}
+    .products-grid{grid-template-columns:repeat(2,1fr)}
+    .cta{padding:44px 26px;flex-direction:column;text-align:center}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <nav class="container">
+    <div class="logo-wrap">
+      <img id="logo-img" src="assets/img/rc-logo.png" alt="Logo">
+    </div>
+    <ul class="nav-links">
+      <li><a href="#servicios">Servicios</a></li>
+      <li><a href="#productos">Productos</a></li>
+      <li><a href="#proceso">Cómo trabajamos</a></li>
+      <li><a href="#contacto">Contacto</a></li>
+    </ul>
+    <div class="nav-right">
+      <div class="brand-switch" role="tablist" aria-label="Elegir marca">
+        <button type="button" data-brand-btn="rc" class="active">RC Publicidad</button>
+        <button type="button" data-brand-btn="ferich">Ferich Marketing</button>
+      </div>
+      <button class="menu-toggle" aria-label="Menú">☰</button>
+    </div>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="container hero-grid">
+    <div data-reveal>
+      <span class="eyebrow">Serigrafía · Sublimación · DTF · Diseño</span>
+      <h1>Transformamos <span class="grad">tus ideas</span> en realidad</h1>
+      <p id="hero-p">Indumentaria personalizada, cartelería y publicidad integral para tu marca, tu evento o tu equipo — con la calidad que tu proyecto merece.</p>
+      <div class="hero-actions">
+        <a href="#contacto" class="btn btn-primary">Pedí tu cotización</a>
+        <a href="https://wa.me/5491169739597" target="_blank" rel="noopener" class="btn btn-ghost">Hablar por WhatsApp</a>
+      </div>
+      <div class="hero-stats">
+        <div><strong>+500</strong><span>Proyectos entregados</span></div>
+        <div><strong>7</strong><span>Técnicas de estampado</span></div>
+        <div><strong>48hs</strong><span>Cotización express</span></div>
+      </div>
+    </div>
+    <div class="hero-visual" data-reveal>
+      <img id="hero-logo-img" src="assets/img/rc-logo.png" alt="Logo grande">
+    </div>
+  </div>
+</section>
+
+<section id="servicios">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <span class="eyebrow">Qué hacemos</span>
+      <h2>Todo lo que tu marca necesita, en un solo lugar</h2>
+      <p>Del diseño a la entrega: producimos y personalizamos cada pieza con procesos propios y control de calidad en cada paso.</p>
+    </div>
+    <div class="services-grid">
+      <div class="service-card" data-reveal><div class="icon">🖨️</div><h3>Serigrafía</h3><p>Estampado tradicional de alta durabilidad para grandes volúmenes y colores sólidos.</p></div>
+      <div class="service-card" data-reveal><div class="icon">🎨</div><h3>Sublimación</h3><p>Impresión full color con acabado profesional, ideal para diseños complejos y degradés.</p></div>
+      <div class="service-card" data-reveal><div class="icon">✂️</div><h3>DTF</h3><p>Transferencia directa a film: rápida, resistente y perfecta para tiradas cortas.</p></div>
+      <div class="service-card" data-reveal><div class="icon">🏷️</div><h3>Vinilo textil</h3><p>Aplicación de vinilo de corte para nombres, números y detalles personalizados.</p></div>
+      <div class="service-card" data-reveal><div class="icon">👕</div><h3>Indumentaria personalizada</h3><p>Remeras, buzos, camperas y uniformes producidos y estampados a medida.</p></div>
+      <div class="service-card" data-reveal><div class="icon">📣</div><h3>Publicidad integral</h3><p>Cartelería, banners y gráfica para puntos de venta, locales y eventos.</p></div>
+      <div class="service-card" data-reveal><div class="icon">💡</div><h3>Diseño gráfico</h3><p>Desarrollo de arte, mockups y adaptación de tu marca a cada producto.</p></div>
+      <div class="service-card" data-reveal><div class="icon">🚗</div><h3>Ploteo vehicular</h3><p>Rotulado y ploteo publicitario para flotas y vehículos comerciales.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="productos" class="products">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <span class="eyebrow">Catálogo</span>
+      <h2>Productos que trabajamos</h2>
+    </div>
+    <div class="products-grid">
+      <div class="product-chip" data-reveal>Remeras</div>
+      <div class="product-chip" data-reveal>Gorras</div>
+      <div class="product-chip" data-reveal>Camperas</div>
+      <div class="product-chip" data-reveal>Chombas</div>
+      <div class="product-chip" data-reveal>Buzos</div>
+      <div class="product-chip" data-reveal>Accesorios</div>
+      <div class="product-chip" data-reveal>Cartelería</div>
+      <div class="product-chip" data-reveal>Banners</div>
+      <div class="product-chip" data-reveal>Merchandising</div>
+      <div class="product-chip" data-reveal>Uniformes</div>
+      <div class="product-chip" data-reveal>Ploteo vehicular</div>
+      <div class="product-chip" data-reveal>Eventos</div>
+    </div>
+  </div>
+</section>
+
+<section id="proceso">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <span class="eyebrow">Cómo trabajamos</span>
+      <h2>De la idea a tu producto, en 4 pasos</h2>
+    </div>
+    <div class="process-grid">
+      <div class="step" data-reveal><h3>Contanos tu idea</h3><p>Nos escribís por WhatsApp o completás el formulario con lo que necesitás.</p></div>
+      <div class="step" data-reveal><h3>Cotización y arte</h3><p>Te armamos el presupuesto y el mockup de diseño para que apruebes antes de producir.</p></div>
+      <div class="step" data-reveal><h3>Producción</h3><p>Elegimos la técnica ideal (serigrafía, sublimación, DTF o vinilo) para tu pedido.</p></div>
+      <div class="step" data-reveal><h3>Entrega</h3><p>Retirás en local o coordinamos envío a todo el país.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="cta" data-reveal>
+      <div>
+        <h2>¿Tenés un proyecto en mente?</h2>
+        <p>Escribinos y te respondemos con tu cotización el mismo día.</p>
+      </div>
+      <a href="https://wa.me/5491169739597" target="_blank" rel="noopener" class="btn btn-white">Cotizar por WhatsApp</a>
+    </div>
+  </div>
+</section>
+
+<section id="contacto">
+  <div class="container contact-grid">
+    <div class="contact-info" data-reveal>
+      <span class="eyebrow">Contacto</span>
+      <h2>Hablemos de tu proyecto</h2>
+      <p>Respondemos de lunes a viernes de 9 a 18hs. Contanos qué necesitás y te asesoramos sin cargo.</p>
+      <div class="contact-item">
+        <div class="icon">📱</div>
+        <div><h4>WhatsApp</h4><span>+54 9 11 6973-9597</span></div>
+      </div>
+      <div class="contact-item">
+        <div class="icon">✉️</div>
+        <div><h4>Email</h4><span id="contact-email">info@rcpublicidadonce.com</span></div>
+      </div>
+      <div class="contact-item">
+        <div class="icon">📍</div>
+        <div><h4>Ubicación</h4><span>Buenos Aires, Argentina</span></div>
+      </div>
+      <div class="contact-item">
+        <div class="icon">🕒</div>
+        <div><h4>Horario</h4><span>Lunes a viernes, 9 a 18hs</span></div>
+      </div>
+    </div>
+    <form class="contact-form" data-reveal onsubmit="event.preventDefault(); alert('¡Gracias! Te contactamos a la brevedad.');">
+      <input type="text" placeholder="Nombre y apellido" required>
+      <input type="text" placeholder="Empresa (opcional)">
+      <input type="email" placeholder="Email" required>
+      <select>
+        <option>¿Qué servicio te interesa?</option>
+        <option>Serigrafía</option>
+        <option>Sublimación</option>
+        <option>DTF</option>
+        <option>Vinilo textil</option>
+        <option>Indumentaria personalizada</option>
+        <option>Publicidad / cartelería</option>
+        <option>Diseño gráfico</option>
+      </select>
+      <textarea placeholder="Contanos tu proyecto..."></textarea>
+      <button type="submit" class="btn btn-primary" style="width:100%">Enviar consulta</button>
+    </form>
+  </div>
+</section>
+
+<footer>
+  <div class="container footer-row">
+    <span>© 2026 <span id="footer-brand">RC Publicidad</span>. Todos los derechos reservados.</span>
+    <div class="footer-brands">Un proyecto de <b>RC Publicidad</b> &amp; <b>Ferich Marketing</b></div>
+  </div>
+</footer>
+
+<script>
+  const BRANDS = {
+    rc: {
+      name: "RC Publicidad",
+      logo: "assets/img/rc-logo.png",
+      heroText: "Indumentaria personalizada, cartelería y publicidad integral para tu marca, tu evento o tu equipo — con la calidad que tu proyecto merece.",
+      email: "info@rcpublicidadonce.com"
+    },
+    ferich: {
+      name: "Ferich Marketing",
+      logo: "assets/img/ferich-logo.png",
+      heroText: "Diseño, estampado y publicidad integral para que tu marca se destaque en cada superficie — de la idea a la entrega, todo en un mismo lugar.",
+      email: "info@ferichmarketing.com"
+    }
+  };
+
+  function setBrand(key){
+    const b = BRANDS[key];
+    document.documentElement.setAttribute('data-brand', key);
+    document.getElementById('logo-img').src = b.logo;
+    document.getElementById('hero-logo-img').src = b.logo;
+    document.getElementById('hero-p').textContent = b.heroText;
+    document.getElementById('contact-email').textContent = b.email;
+    document.getElementById('footer-brand').textContent = b.name;
+    document.querySelectorAll('[data-brand-btn]').forEach(btn=>{
+      btn.classList.toggle('active', btn.dataset.brandBtn === key);
+    });
+    localStorage.setItem('brand', key);
+  }
+
+  document.querySelectorAll('[data-brand-btn]').forEach(btn=>{
+    btn.addEventListener('click', ()=> setBrand(btn.dataset.brandBtn));
+  });
+
+  const saved = localStorage.getItem('brand');
+  if(saved && BRANDS[saved]) setBrand(saved);
+
+  const io = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('in'); });
+  },{threshold:.15});
+  document.querySelectorAll('[data-reveal]').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>

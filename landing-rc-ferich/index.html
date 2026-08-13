@@ -252,8 +252,16 @@
   .footer-brands{display:flex;gap:10px;font-size:.82rem;color:var(--text-dim)}
   .footer-brands b{color:var(--text)}
 
-  [data-reveal]{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
-  [data-reveal].in{opacity:1;transform:translateY(0)}
+  [data-reveal]{
+    opacity:0;transform:translateY(32px) scale(.98);
+    transition:opacity .9s cubic-bezier(.16,1,.3,1),transform .9s cubic-bezier(.16,1,.3,1);
+    transition-delay:var(--reveal-delay,0ms);
+    will-change:opacity,transform;
+  }
+  [data-reveal].in{opacity:1;transform:translateY(0) scale(1)}
+  @media(prefers-reduced-motion:reduce){
+    [data-reveal]{transition:none;opacity:1;transform:none}
+  }
 
   @media(max-width:980px){
     .hero-grid{grid-template-columns:1fr}
@@ -300,12 +308,12 @@
 <section class="hero">
   <div class="container hero-grid">
     <div data-reveal>
-      <span class="eyebrow">DTF · Sublimado · Vinilo · Lona · Stickers</span>
-      <h1>Transformamos <span class="grad">tus ideas</span> en realidad</h1>
+      <span class="eyebrow" id="hero-eyebrow">DTF · Sublimado · Vinilo · Lona · Stickers</span>
+      <h1 id="hero-heading">Transformamos <span class="grad">tus ideas</span> en realidad</h1>
       <p id="hero-p">Estampados para indumentaria, lonas y stickers con la técnica ideal para cada proyecto — calidad y terminación profesional en cada entrega.</p>
       <div class="hero-actions">
         <a href="#contacto" class="btn btn-primary">Pedí tu cotización</a>
-        <a href="https://wa.me/5491169739597" target="_blank" rel="noopener" class="btn btn-ghost">Hablar por WhatsApp</a>
+        <a id="wa-hero" href="https://wa.me/5491169739597" target="_blank" rel="noopener" class="btn btn-ghost">Hablar por WhatsApp</a>
       </div>
       <div class="hero-stats">
         <div><strong>+500</strong><span>Proyectos entregados</span></div>
@@ -322,9 +330,9 @@
 <section id="servicios">
   <div class="container">
     <div class="section-head" data-reveal>
-      <span class="eyebrow">Qué hacemos</span>
-      <h2>Todo lo que tu marca necesita, en un solo lugar</h2>
-      <p>Estampamos y producimos con la técnica ideal para cada material, con control de calidad en cada paso.</p>
+      <span class="eyebrow" id="services-eyebrow">Qué hacemos</span>
+      <h2 id="services-heading">Todo lo que tu marca necesita, en un solo lugar</h2>
+      <p id="services-text">Estampamos y producimos con la técnica ideal para cada material, con control de calidad en cada paso.</p>
     </div>
     <div class="services-grid">
       <div class="service-card" data-reveal><div class="icon">✂️</div><h3>DTF</h3><p>Transferencia directa a film: rápida, resistente y perfecta para tiradas cortas.</p></div>
@@ -386,10 +394,10 @@
   <div class="container">
     <div class="cta" data-reveal>
       <div>
-        <h2>¿Tenés un proyecto en mente?</h2>
-        <p>Escribinos y te respondemos con tu cotización el mismo día.</p>
+        <h2 id="cta-heading">¿Tenés un proyecto en mente?</h2>
+        <p id="cta-text">Escribinos y te respondemos con tu cotización el mismo día.</p>
       </div>
-      <a href="https://wa.me/5491169739597" target="_blank" rel="noopener" class="btn btn-white">Cotizar por WhatsApp</a>
+      <a id="wa-cta" href="https://wa.me/5491169739597" target="_blank" rel="noopener" class="btn btn-white">Cotizar por WhatsApp</a>
     </div>
   </div>
 </section>
@@ -400,14 +408,14 @@
       <span class="eyebrow">Contacto</span>
       <h2>Hablemos de tu proyecto</h2>
       <p>Respondemos de lunes a viernes de 9 a 18hs. Contanos qué necesitás y te asesoramos sin cargo.</p>
-      <div class="contact-item">
+      <a class="contact-item" id="wa-contact" href="https://wa.me/5491169739597" target="_blank" rel="noopener">
         <div class="icon">📱</div>
-        <div><h4>WhatsApp</h4><span>+54 9 11 6973-9597</span></div>
-      </div>
-      <div class="contact-item">
+        <div><h4>WhatsApp</h4><span id="contact-phone">+54 9 11 6973-9597</span></div>
+      </a>
+      <a class="contact-item" id="contact-email" href="mailto:rcpublicidad11@gmail.com">
         <div class="icon">✉️</div>
-        <div><h4>Email</h4><span id="contact-email">info@rcpublicidadonce.com</span></div>
-      </div>
+        <div><h4>Email</h4><span id="contact-email-text">rcpublicidad11@gmail.com</span></div>
+      </a>
       <div class="contact-item">
         <div class="icon">📍</div>
         <div><h4>Ubicación</h4><span>Buenos Aires, Argentina</span></div>
@@ -570,14 +578,32 @@
     rc: {
       name: "RC Publicidad",
       logo: "assets/img/rc-logo.png",
+      email: "rcpublicidad11@gmail.com",
+      phoneDisplay: "+54 9 11 6973-9597",
+      phoneWa: "5491169739597",
+      heroEyebrow: "DTF · Sublimado · Vinilo · Lona · Stickers",
+      heroHeading: 'Transformamos <span class="grad">tus ideas</span> en realidad',
       heroText: "Estampados para indumentaria, lonas y stickers con la técnica ideal para cada proyecto — calidad y terminación profesional en cada entrega.",
-      email: "info@rcpublicidadonce.com"
+      servicesEyebrow: "Qué hacemos",
+      servicesHeading: "Todo lo que tu marca necesita, en un solo lugar",
+      servicesText: "Estampamos y producimos con la técnica ideal para cada material, con control de calidad en cada paso.",
+      ctaHeading: "¿Tenés un proyecto en mente?",
+      ctaText: "Escribinos y te respondemos con tu cotización el mismo día."
     },
     ferich: {
       name: "Ferich Marketing",
       logo: "assets/img/ferich-logo.png",
-      heroText: "DTF, sublimado, vinilo, lona y stickers para que tu marca se destaque en cada superficie — de la idea a la entrega, todo en un mismo lugar.",
-      email: "info@ferichmarketing.com"
+      email: "ferichmarketing@gmail.com",
+      phoneDisplay: "+54 9 11 6619-7698",
+      phoneWa: "5491166197698",
+      heroEyebrow: "Estampados · Diseño · Producción a medida",
+      heroHeading: 'Hacemos <span class="grad">renacer</span> tu marca',
+      heroText: "DTF, sublimado, vinilo, lona y stickers con terminación profesional — llevamos tu diseño de la pantalla a la superficie que elijas.",
+      servicesEyebrow: "Nuestro trabajo",
+      servicesHeading: "Un proceso pensado para que tu marca se destaque",
+      servicesText: "Cada técnica tiene su momento: te ayudamos a elegir la ideal según el material, la cantidad y el uso que le vas a dar.",
+      ctaHeading: "¿Listo para renovar tu imagen?",
+      ctaText: "Contanos tu idea y te mandamos la cotización el mismo día."
     }
   };
 
@@ -586,9 +612,24 @@
     document.documentElement.setAttribute('data-brand', key);
     document.getElementById('logo-img').src = b.logo;
     document.getElementById('hero-logo-img').src = b.logo;
+    document.getElementById('hero-eyebrow').textContent = b.heroEyebrow;
+    document.getElementById('hero-heading').innerHTML = b.heroHeading;
     document.getElementById('hero-p').textContent = b.heroText;
-    document.getElementById('contact-email').textContent = b.email;
+    document.getElementById('services-eyebrow').textContent = b.servicesEyebrow;
+    document.getElementById('services-heading').textContent = b.servicesHeading;
+    document.getElementById('services-text').textContent = b.servicesText;
+    document.getElementById('cta-heading').textContent = b.ctaHeading;
+    document.getElementById('cta-text').textContent = b.ctaText;
+    document.getElementById('contact-email-text').textContent = b.email;
+    document.getElementById('contact-email').href = 'mailto:' + b.email;
+    document.getElementById('contact-phone').textContent = b.phoneDisplay;
     document.getElementById('footer-brand').textContent = b.name;
+
+    const waLink = 'https://wa.me/' + b.phoneWa;
+    document.getElementById('wa-hero').href = waLink;
+    document.getElementById('wa-cta').href = waLink;
+    document.getElementById('wa-contact').href = waLink;
+
     document.querySelectorAll('[data-brand-btn]').forEach(btn=>{
       btn.classList.toggle('active', btn.dataset.brandBtn === key);
     });
@@ -602,10 +643,33 @@
   const saved = localStorage.getItem('brand');
   if(saved && BRANDS[saved]) setBrand(saved);
 
+  // Stagger reveal delay based on position among siblings
+  document.querySelectorAll('[data-reveal]').forEach(el=>{
+    const siblings = Array.from(el.parentElement.querySelectorAll(':scope > [data-reveal]'));
+    const idx = siblings.indexOf(el);
+    el.style.setProperty('--reveal-delay', Math.min(idx,6)*90 + 'ms');
+  });
+
   const io = new IntersectionObserver(entries=>{
     entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('in'); });
   },{threshold:.15});
   document.querySelectorAll('[data-reveal]').forEach(el=>io.observe(el));
+
+  // Subtle parallax on hero visual
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!reduceMotion){
+    const heroImg = document.getElementById('hero-logo-img');
+    let ticking = false;
+    window.addEventListener('scroll', ()=>{
+      if(ticking) return;
+      ticking = true;
+      requestAnimationFrame(()=>{
+        const y = Math.min(window.scrollY, 400);
+        heroImg.style.transform = `translateY(${y*0.12}px)`;
+        ticking = false;
+      });
+    }, {passive:true});
+  }
 </script>
 </body>
 </html>

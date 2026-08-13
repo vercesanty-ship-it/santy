@@ -675,48 +675,60 @@
     }, {passive:true});
   }
 
-  // Inertial mouse-wheel scroll (desktop only) for a smoother, more premium feel
+  // Inertial mouse-wheel scroll (desktop only): velocity + friction, like a heavy flywheel.
   if(!reduceMotion && !('ontouchstart' in window)){
-    let current = window.scrollY;
-    let target = window.scrollY;
+    let position = window.scrollY;
+    let velocity = 0;
     let raf = null;
     let externalSync = true;
+    const FRICTION = 0.90;    // closer to 1 = longer, more pronounced glide
+    const PUSH = 0.7;         // how much each wheel tick accelerates the scroll
 
     function maxScroll(){
       return document.documentElement.scrollHeight - window.innerHeight;
     }
 
     function step(){
-      const diff = target - current;
-      current += diff * 0.11;
-      if(Math.abs(diff) < 0.4){
-        current = target;
-        raf = null;
-      } else {
-        raf = requestAnimationFrame(step);
-      }
+      position += velocity;
+      velocity *= FRICTION;
+
+      const max = maxScroll();
+      if(position < 0){ position = 0; velocity = 0; }
+      if(position > max){ position = max; velocity = 0; }
+
       externalSync = false;
-      window.scrollTo(0, current);
+      window.scrollTo({ top: position, left: 0, behavior: 'instant' });
       externalSync = true;
+
+      if(Math.abs(velocity) > 0.05){
+        raf = requestAnimationFrame(step);
+      } else {
+        raf = null;
+      }
     }
+
+    const MAX_VELOCITY = 90;
 
     window.addEventListener('wheel', (e)=>{
       if(e.ctrlKey) return; // let pinch-zoom behave natively
       e.preventDefault();
-      target = Math.min(Math.max(target + e.deltaY, 0), maxScroll());
-      if(!raf) raf = requestAnimationFrame(step);
+      velocity += e.deltaY * PUSH;
+      velocity = Math.max(-MAX_VELOCITY, Math.min(MAX_VELOCITY, velocity));
+      if(!raf){
+        position = window.scrollY;
+        raf = requestAnimationFrame(step);
+      }
     }, {passive:false});
 
     // keep in sync with anchor-link jumps, keyboard scroll, etc.
     window.addEventListener('scroll', ()=>{
       if(externalSync && !raf){
-        current = window.scrollY;
-        target = window.scrollY;
+        position = window.scrollY;
       }
     }, {passive:true});
 
     window.addEventListener('resize', ()=>{
-      target = Math.min(target, maxScroll());
+      position = Math.min(position, maxScroll());
     });
   }
 </script>

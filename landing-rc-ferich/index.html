@@ -352,14 +352,14 @@
       <h2>Productos que trabajamos</h2>
     </div>
     <div class="products-grid">
-      <div class="product-card" data-reveal><img src="assets/img/products/remeras.jpg" alt="Remeras" loading="lazy"><span>Remeras</span></div>
-      <div class="product-card" data-reveal><img src="assets/img/products/buzos.jpg" alt="Buzos y camperas" loading="lazy"><span>Buzos y camperas</span></div>
-      <div class="product-card" data-reveal><img src="assets/img/products/gorras.jpg" alt="Gorras" loading="lazy"><span>Gorras</span></div>
-      <div class="product-card" data-reveal><img src="assets/img/products/chombas.jpg" alt="Chombas y uniformes" loading="lazy"><span>Chombas y uniformes</span></div>
-      <div class="product-card" data-reveal><img src="assets/img/products/lonas.jpg" alt="Lonas" loading="lazy"><span>Lonas</span></div>
-      <div class="product-card" data-reveal><img src="assets/img/products/stickers.jpg" alt="Stickers" loading="lazy"><span>Stickers</span></div>
-      <div class="product-card" data-reveal><img src="assets/img/products/accesorios.jpg" alt="Accesorios" loading="lazy"><span>Accesorios</span></div>
-      <div class="product-card" data-reveal><img src="assets/img/products/merchandising.jpg" alt="Merchandising" loading="lazy"><span>Merchandising</span></div>
+      <div class="product-card" data-reveal><img data-product="remeras" src="assets/img/products/rc/remeras.jpg" alt="Remeras" loading="lazy"><span>Remeras</span></div>
+      <div class="product-card" data-reveal><img data-product="buzos" src="assets/img/products/rc/buzos.jpg" alt="Buzos y camperas" loading="lazy"><span>Buzos y camperas</span></div>
+      <div class="product-card" data-reveal><img data-product="gorras" src="assets/img/products/rc/gorras.jpg" alt="Gorras" loading="lazy"><span>Gorras</span></div>
+      <div class="product-card" data-reveal><img data-product="chombas" src="assets/img/products/rc/chombas.jpg" alt="Chombas y uniformes" loading="lazy"><span>Chombas y uniformes</span></div>
+      <div class="product-card" data-reveal><img data-product="lonas" src="assets/img/products/rc/lonas.jpg" alt="Lonas" loading="lazy"><span>Lonas</span></div>
+      <div class="product-card" data-reveal><img data-product="stickers" src="assets/img/products/rc/stickers.jpg" alt="Stickers" loading="lazy"><span>Stickers</span></div>
+      <div class="product-card" data-reveal><img data-product="accesorios" src="assets/img/products/rc/accesorios.jpg" alt="Accesorios" loading="lazy"><span>Accesorios</span></div>
+      <div class="product-card" data-reveal><img data-product="merchandising" src="assets/img/products/rc/merchandising.jpg" alt="Merchandising" loading="lazy"><span>Merchandising</span></div>
     </div>
   </div>
 </section>
@@ -625,6 +625,10 @@
     document.getElementById('contact-phone').textContent = b.phoneDisplay;
     document.getElementById('footer-brand').textContent = b.name;
 
+    document.querySelectorAll('[data-product]').forEach(img=>{
+      img.src = `assets/img/products/${key}/${img.dataset.product}.jpg`;
+    });
+
     const waLink = 'https://wa.me/' + b.phoneWa;
     document.getElementById('wa-hero').href = waLink;
     document.getElementById('wa-cta').href = waLink;
@@ -669,6 +673,51 @@
         ticking = false;
       });
     }, {passive:true});
+  }
+
+  // Inertial mouse-wheel scroll (desktop only) for a smoother, more premium feel
+  if(!reduceMotion && !('ontouchstart' in window)){
+    let current = window.scrollY;
+    let target = window.scrollY;
+    let raf = null;
+    let externalSync = true;
+
+    function maxScroll(){
+      return document.documentElement.scrollHeight - window.innerHeight;
+    }
+
+    function step(){
+      const diff = target - current;
+      current += diff * 0.11;
+      if(Math.abs(diff) < 0.4){
+        current = target;
+        raf = null;
+      } else {
+        raf = requestAnimationFrame(step);
+      }
+      externalSync = false;
+      window.scrollTo(0, current);
+      externalSync = true;
+    }
+
+    window.addEventListener('wheel', (e)=>{
+      if(e.ctrlKey) return; // let pinch-zoom behave natively
+      e.preventDefault();
+      target = Math.min(Math.max(target + e.deltaY, 0), maxScroll());
+      if(!raf) raf = requestAnimationFrame(step);
+    }, {passive:false});
+
+    // keep in sync with anchor-link jumps, keyboard scroll, etc.
+    window.addEventListener('scroll', ()=>{
+      if(externalSync && !raf){
+        current = window.scrollY;
+        target = window.scrollY;
+      }
+    }, {passive:true});
+
+    window.addEventListener('resize', ()=>{
+      target = Math.min(target, maxScroll());
+    });
   }
 </script>
 </body>

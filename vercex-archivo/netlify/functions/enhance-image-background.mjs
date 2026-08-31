@@ -32,11 +32,28 @@ async function fitWithinPixelBudget(buffer, maxPixels) {
   return sharp(buffer).resize(width, height, { fit: "inside" }).png().toBuffer();
 }
 
+// El endpoint corto POST /models/{owner}/{name}/predictions solo funciona
+// con modelos "oficiales" de Replicate — con modelos de la comunidad (como
+// cjwbw/rembg) devuelve 404 "resource not found". La forma que funciona
+// para cualquier modelo es resolver primero el id de su última versión y
+// crear la predicción contra /predictions con ese id.
+async function resolveLatestVersion(model, token) {
+  const res = await fetch(`${REPLICATE_API}/models/${model}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (!res.ok || !data?.latest_version?.id) {
+    throw new Error(`Replicate (${model}): no pudimos resolver la versión del modelo (${data?.detail || res.statusText}).`);
+  }
+  return data.latest_version.id;
+}
+
 async function replicatePredict(model, input, token) {
-  const createRes = await fetch(`${REPLICATE_API}/models/${model}/predictions`, {
+  const version = await resolveLatestVersion(model, token);
+  const createRes = await fetch(`${REPLICATE_API}/predictions`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "content-type": "application/json", Prefer: "wait" },
-    body: JSON.stringify({ input }),
+    body: JSON.stringify({ version, input }),
   });
   let prediction = await createRes.json();
   if (!createRes.ok) throw new Error(`Replicate (${model}): ${prediction?.detail || createRes.statusText}`);

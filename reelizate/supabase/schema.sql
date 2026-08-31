@@ -7,6 +7,7 @@ create table if not exists profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
   subscription_status text not null default 'none', -- 'none' | 'active' | 'past_due' | 'canceled'
+  plan text, -- 'standard' (5 videos/mes) | 'pro' (ilimitado) | null (sin suscripción)
   created_at timestamptz not null default now()
 );
 

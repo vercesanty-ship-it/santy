@@ -15,9 +15,11 @@ export default async (req) => {
       return new Response(JSON.stringify({ error: "No autenticado." }), { status: 401 });
     }
 
-    const { data: profile } = await supabase.from("profiles").select("subscription_status").eq("id", userData.user.id).single();
-    if (profile?.subscription_status !== "active") {
-      return new Response(JSON.stringify({ error: "Necesitás una suscripción activa para generar guiones." }), { status: 402 });
+    if (userData.user.email !== "vercesanty@gmail.com") {
+      const { data: profile } = await supabase.from("profiles").select("subscription_status").eq("id", userData.user.id).single();
+      if (profile?.subscription_status !== "active") {
+        return new Response(JSON.stringify({ error: "Necesitás una suscripción activa para generar guiones." }), { status: 402 });
+      }
     }
 
     const { topic } = await req.json();

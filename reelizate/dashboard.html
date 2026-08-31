@@ -60,8 +60,9 @@
   <main>
     <div class="card">
       <h3>Tu plan</h3>
-      <div style="font-size:20px; font-weight:700;">USD 5 / mes — videos ilimitados</div>
+      <div style="font-size:20px; font-weight:700;" id="planName">—</div>
       <span class="status-pill" id="statusPill">—</span>
+      <div id="usageLine" style="font-size:13px; color:var(--muted); margin-top:8px;"></div>
       <div id="subscribeArea"></div>
     </div>
 
@@ -83,34 +84,79 @@
         window.location.href = "login.html";
       });
 
+      const PLAN_DEFS = { standard: { limit: 5, priceUsd: 5 }, pro: { limit: null, priceUsd: 10 } };
+      const PLAN_LABELS = { standard: "Standard", pro: "Pro" };
+      const isOwner = session.user.email === "vercesanty@gmail.com";
+
       const { data: profile } = await supabaseClient.from("profiles").select("*").eq("id", session.user.id).single();
       const status = profile?.subscription_status || "none";
 
       const pill = document.getElementById("statusPill");
-      pill.textContent = { active: "Activa", past_due: "Pago pendiente", canceled: "Cancelada", none: "Sin suscripción" }[status] || status;
-      pill.className = "status-pill status-" + status;
-
+      const planNameEl = document.getElementById("planName");
+      const usageLine = document.getElementById("usageLine");
       const subscribeArea = document.getElementById("subscribeArea");
-      if (status !== "active") {
-        subscribeArea.innerHTML = `<div><button id="subscribeBtn">Suscribirme por USD 5/mes</button></div>
-          <div id="subscribeStatus" style="font-size:12px; color:var(--muted); margin-top:8px;"></div>`;
-        document.getElementById("subscribeBtn").addEventListener("click", async () => {
-          const btn = document.getElementById("subscribeBtn");
-          const statusEl = document.getElementById("subscribeStatus");
-          btn.disabled = true;
-          statusEl.textContent = "Generando el link de pago...";
-          try {
-            const resp = await fetch("/api/create-subscription", {
-              method: "POST",
-              headers: { "content-type": "application/json", Authorization: `Bearer ${session.access_token}` },
-            });
-            const data = await resp.json();
-            if (!resp.ok || !data.init_point) throw new Error(data.error || "No se pudo generar el pago");
-            window.location.href = data.init_point;
-          } catch (err) {
-            statusEl.textContent = "Error: " + (err.message || err);
-            btn.disabled = false;
+
+      if (isOwner) {
+        planNameEl.textContent = "Admin";
+        pill.style.display = "none";
+      } else {
+        pill.textContent = { active: "Activa", past_due: "Pago pendiente", canceled: "Cancelada", none: "Sin suscripción" }[status] || status;
+        pill.className = "status-pill status-" + status;
+
+        if (status === "active" && PLAN_DEFS[profile.plan]) {
+          const planDef = PLAN_DEFS[profile.plan];
+          planNameEl.textContent = `${PLAN_LABELS[profile.plan]} — USD ${planDef.priceUsd}/mes`;
+          if (planDef.limit !== null) {
+            const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+            const { count } = await supabaseClient
+              .from("video_jobs")
+              .select("id", { count: "exact", head: true })
+              .eq("user_id", session.user.id)
+              .gte("created_at", startOfMonth);
+            usageLine.textContent = `${count || 0}/${planDef.limit} videos usados este mes`;
+          } else {
+            usageLine.textContent = "Videos ilimitados";
           }
+        } else {
+          planNameEl.textContent = "Sin suscripción";
+        }
+
+        const rows = Object.entries(PLAN_DEFS).map(([planKey, def]) => {
+          const isCurrent = planKey === profile?.plan && status === "active";
+          const limitText = def.limit === null ? "videos ilimitados" : `hasta ${def.limit} videos/mes`;
+          return `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border);">
+              <div>
+                <strong>${PLAN_LABELS[planKey]}</strong>
+                <div style="font-size:12px; color:var(--muted);">${limitText} · USD ${def.priceUsd}/mes</div>
+              </div>
+              ${isCurrent
+                ? `<span style="font-size:12px; color:var(--accent);">Plan actual</span>`
+                : `<button class="subscribe-btn" data-plan="${planKey}">Suscribirme</button>`}
+            </div>`;
+        }).join("");
+        subscribeArea.innerHTML = `<div style="margin-top:10px;">${rows}</div>
+          <div id="subscribeStatus" style="font-size:12px; color:var(--muted); margin-top:8px;"></div>`;
+
+        subscribeArea.querySelectorAll(".subscribe-btn").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const statusEl = document.getElementById("subscribeStatus");
+            btn.disabled = true;
+            statusEl.textContent = "Generando el link de pago...";
+            try {
+              const resp = await fetch("/api/create-subscription", {
+                method: "POST",
+                headers: { "content-type": "application/json", Authorization: `Bearer ${session.access_token}` },
+                body: JSON.stringify({ plan: btn.dataset.plan }),
+              });
+              const data = await resp.json();
+              if (!resp.ok || !data.init_point) throw new Error(data.error || "No se pudo generar el pago");
+              window.location.href = data.init_point;
+            } catch (err) {
+              statusEl.textContent = "Error: " + (err.message || err);
+              btn.disabled = false;
+            }
+          });
         });
       }
 

@@ -95,13 +95,19 @@
   .pricing .inner { text-align: center; }
   .pricing h2 { font-size: 30px; margin: 0 0 10px; letter-spacing: -0.02em; }
   .pricing p.lead { color: var(--muted); margin: 0 0 40px; }
+  .price-grid { display: flex; gap: 22px; justify-content: center; flex-wrap: wrap; }
   .price-card {
-    max-width: 360px; margin: 0 auto; background: #fff; border: 1px solid var(--border); border-radius: 22px;
+    width: 320px; text-align: left; background: #fff; border: 1px solid var(--border); border-radius: 22px;
     padding: 38px 32px; box-shadow: 0 20px 50px -25px rgba(124,58,237,0.35);
   }
-  .price-card .amount { font-size: 48px; font-weight: 800; letter-spacing: -0.03em; }
+  .price-card:nth-child(2) { border: 2px solid var(--accent); }
+  .plan-badge {
+    display: inline-block; font-size: 12px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase;
+    color: var(--accent2); background: var(--panel2); padding: 4px 12px; border-radius: 999px; margin-bottom: 14px;
+  }
+  .price-card .amount { font-size: 44px; font-weight: 800; letter-spacing: -0.03em; }
   .price-card .amount span { font-size: 16px; color: var(--muted); font-weight: 600; }
-  .price-card ul { list-style: none; padding: 0; margin: 26px 0; text-align: left; }
+  .price-card ul { list-style: none; padding: 0; margin: 22px 0; text-align: left; }
   .price-card li { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; font-size: 14px; color: var(--text); }
   .price-card li::before { content: "✓"; color: var(--accent2); font-weight: 800; }
   .price-card .btn-primary { width: 100%; text-align: center; }
@@ -131,7 +137,7 @@
         <a class="btn btn-primary" href="app.html">Probar con 1 video gratis</a>
         <a class="btn btn-ghost" href="#features">Ver qué incluye</a>
       </div>
-      <p class="fineprint">Sin registrarte para la muestra gratis · Después, USD 5/mes</p>
+      <p class="fineprint">Sin registrarte para la muestra gratis · Después, desde USD 5/mes</p>
       <div class="badges">
         <span class="badge"><span class="sw"></span> Subtítulos automáticos</span>
         <span class="badge"><span class="sw"></span> Corte de silencios</span>
@@ -182,18 +188,33 @@
 
   <section class="pricing" id="pricing">
     <div class="wrap inner">
-      <h2>Un solo plan, simple</h2>
+      <h2>Elegí tu plan</h2>
       <p class="lead">Probás gratis, y si te sirve, seguís por muy poco.</p>
-      <div class="price-card">
-        <div class="amount">USD 5 <span>/ mes</span></div>
-        <ul>
-          <li>Videos ilimitados</li>
-          <li>Edición automática completa</li>
-          <li>Subtítulos + descripción + hashtags</li>
-          <li>Generador de guiones sin límite</li>
-          <li>Cancelás cuando quieras</li>
-        </ul>
-        <a class="btn btn-primary" href="app.html">Empezar con 1 video gratis</a>
+      <div class="price-grid">
+        <div class="price-card">
+          <div class="plan-badge">Standard</div>
+          <div class="amount">USD 5 <span>/ mes</span></div>
+          <ul>
+            <li>Hasta 5 videos por mes</li>
+            <li>Edición automática completa</li>
+            <li>Subtítulos + descripción + hashtags</li>
+            <li>Generador de guiones sin límite</li>
+            <li>Cancelás cuando quieras</li>
+          </ul>
+          <a class="btn btn-primary" href="app.html">Empezar con 1 video gratis</a>
+        </div>
+        <div class="price-card">
+          <div class="plan-badge">Pro</div>
+          <div class="amount">USD 10 <span>/ mes</span></div>
+          <ul>
+            <li>Videos ilimitados</li>
+            <li>Edición automática completa</li>
+            <li>Subtítulos + descripción + hashtags</li>
+            <li>Generador de guiones sin límite</li>
+            <li>Cancelás cuando quieras</li>
+          </ul>
+          <a class="btn btn-primary" href="app.html">Empezar con 1 video gratis</a>
+        </div>
       </div>
     </div>
   </section>

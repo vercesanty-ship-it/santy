@@ -9,10 +9,10 @@ async function fetchMpResource(kind, id, token) {
   return res.json();
 }
 
-function parseUserId(externalReference) {
-  const [product, userId] = String(externalReference || "").split(":");
+function parseReference(externalReference) {
+  const [product, userId, plan] = String(externalReference || "").split(":");
   if (product !== "reelizate" || !userId) return null;
-  return userId;
+  return { userId, plan: plan || null };
 }
 
 export default async (req) => {
@@ -37,22 +37,26 @@ export default async (req) => {
 
     if (type === "preapproval" || type === "subscription_preapproval") {
       const preapproval = await fetchMpResource("preapproval", id, mpToken);
-      const userId = parseUserId(preapproval.external_reference);
-      if (userId) {
+      const parsed = parseReference(preapproval.external_reference);
+      if (parsed) {
         const statusMap = { authorized: "active", paused: "past_due", cancelled: "canceled" };
         const subscription_status = statusMap[preapproval.status];
         if (subscription_status) {
-          await supabase.from("profiles").update({ subscription_status }).eq("id", userId);
+          const update = { subscription_status };
+          if (parsed.plan) update.plan = parsed.plan;
+          await supabase.from("profiles").update(update).eq("id", parsed.userId);
         }
       }
     } else if (type === "payment" || type === "subscription_authorized_payment") {
       const payment = await fetchMpResource("payment", id, mpToken);
-      const userId = parseUserId(payment.external_reference);
-      if (userId) {
+      const parsed = parseReference(payment.external_reference);
+      if (parsed) {
         const statusMap = { approved: "active", rejected: "past_due", cancelled: "past_due" };
         const subscription_status = statusMap[payment.status];
         if (subscription_status) {
-          await supabase.from("profiles").update({ subscription_status }).eq("id", userId);
+          const update = { subscription_status };
+          if (parsed.plan) update.plan = parsed.plan;
+          await supabase.from("profiles").update(update).eq("id", parsed.userId);
         }
       }
     }

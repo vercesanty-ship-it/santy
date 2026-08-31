@@ -14,6 +14,8 @@ const WHISPER_MODEL = "openai/whisper"; // input: audio (url o base64) -> { text
 // tiempo (15 min) y memoria/disco — por ahora restringimos la duración para
 // no pasarnos. Se puede subir más adelante si migramos a un worker aparte.
 const MAX_DURATION_SECONDS = 180;
+const PLAN_DEFS = { standard: { limit: 5 }, pro: { limit: null } };
+const OWNER_EMAIL = "vercesanty@gmail.com";
 const SILENCE_NOISE_DB = "-30dB";
 const SILENCE_MIN_DURATION = 0.5;
 
@@ -165,6 +167,29 @@ export default async (req) => {
       const { data: userData } = await supabase.auth.getUser(token);
       if (!userData?.user || userData.user.id !== job.user_id) {
         return new Response("Forbidden", { status: 403 });
+      }
+
+      // El dueño de la cuenta no tiene límite. Para el resto, chequeamos de
+      // nuevo del lado del servidor (no solo en el frontend) que la
+      // suscripción esté activa y que no haya superado el límite mensual
+      // de su plan, por si alguien intenta saltearse el gate del cliente.
+      if (userData.user.email !== OWNER_EMAIL) {
+        const { data: profile } = await supabase.from("profiles").select("*").eq("id", job.user_id).single();
+        const planDef = PLAN_DEFS[profile?.plan];
+        if (profile?.subscription_status !== "active" || !planDef) {
+          throw new Error("No tenés una suscripción activa.");
+        }
+        if (planDef.limit !== null) {
+          const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+          const { count } = await supabase
+            .from("video_jobs")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", job.user_id)
+            .gte("created_at", startOfMonth);
+          if ((count || 0) > planDef.limit) {
+            throw new Error(`Alcanzaste el límite de tu plan (${planDef.limit} videos/mes).`);
+          }
+        }
       }
     }
 

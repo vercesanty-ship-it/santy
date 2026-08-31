@@ -2,7 +2,11 @@ import { createClient } from "@supabase/supabase-js";
 
 export const config = { path: "/api/create-subscription" };
 
-const PRICE_USD = 5;
+const PLAN_DEFS = {
+  standard: { limit: 5, priceUsd: 5 },
+  pro: { limit: null, priceUsd: 10 },
+};
+const PLAN_LABELS = { standard: "Standard", pro: "Pro" };
 
 async function getDolarOficialVenta() {
   const res = await fetch("https://dolarapi.com/v1/dolares/oficial");
@@ -28,19 +32,25 @@ export default async (req) => {
     }
     const user = userData.user;
 
+    const { plan } = await req.json();
+    const planDef = PLAN_DEFS[plan];
+    if (!planDef) {
+      return new Response(JSON.stringify({ error: "Plan inválido." }), { status: 400 });
+    }
+
     const dolarVenta = await getDolarOficialVenta();
-    const amountArs = Math.round(PRICE_USD * dolarVenta);
+    const amountArs = Math.round(planDef.priceUsd * dolarVenta);
 
     const siteUrl = Netlify.env.get("URL") || `https://${req.headers.get("host")}`;
     // "reelizate" en la referencia distingue esta suscripción de las de
     // otros productos que puedan compartir la misma cuenta de Mercado Pago.
-    const externalReference = `reelizate:${user.id}`;
+    const externalReference = `reelizate:${user.id}:${plan}`;
 
     const mpRes = await fetch("https://api.mercadopago.com/preapproval", {
       method: "POST",
       headers: { Authorization: `Bearer ${mpToken}`, "content-type": "application/json" },
       body: JSON.stringify({
-        reason: "Reelizate — Plan mensual",
+        reason: `Reelizate — Plan ${PLAN_LABELS[plan]}`,
         external_reference: externalReference,
         payer_email: user.email,
         back_url: `${siteUrl}/dashboard.html`,

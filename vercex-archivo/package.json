@@ -1,0 +1,8 @@
+{
+  "name": "vercex-archivo",
+  "private": true,
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "sharp": "^0.33.5"
+  }
+}

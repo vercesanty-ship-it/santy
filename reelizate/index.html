@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Reelizate — Edición de video con IA para Instagram</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="favicon-32.png" />
+<meta name="theme-color" content="#ffffff" />
+<meta name="description" content="Subí tu video, la IA lo edita, le pone subtítulos y te arma la descripción para Instagram. Guiones incluidos. Probá 1 video gratis." />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase-config.js"></script>
+<style>
+  :root {
+    --bg: #ffffff;
+    --panel: #faf8fc;
+    --panel2: #f4eefa;
+    --border: #e7e0f0;
+    --text: #14121a;
+    --muted: #6b6575;
+    --accent: #c026d3;
+    --accent2: #7c3aed;
+    --accent-grad: linear-gradient(135deg, #ec4899, #8b5cf6);
+    --sky: #0ea5e9;
+    --black: #0a0a0f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  header.topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 0; border-bottom: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; letter-spacing: -0.02em; }
+  .brand .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent-grad); }
+  nav.top-links { display: flex; align-items: center; gap: 28px; font-size: 14px; color: var(--muted); }
+  nav.top-links a { text-decoration: none; }
+  nav.top-links a:hover { color: var(--text); }
+  .btn {
+    display: inline-block; text-decoration: none; font-weight: 700; font-size: 14px;
+    border-radius: 999px; padding: 11px 22px; border: none; cursor: pointer;
+  }
+  .btn-primary { background: var(--accent-grad); color: #fff; box-shadow: 0 8px 24px -8px rgba(192,38,211,0.55); }
+  .btn-primary:hover { filter: brightness(1.05); }
+  .btn-ghost { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
+
+  .hero { padding: 88px 0 64px; text-align: center; }
+  .hero .kicker {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700;
+    color: var(--accent2); background: var(--panel2); border: 1px solid var(--border);
+    padding: 6px 14px; border-radius: 999px; margin-bottom: 22px;
+  }
+  .hero h1 { font-size: 52px; line-height: 1.08; margin: 0 0 20px; letter-spacing: -0.03em; }
+  .hero h1 .grad {
+    background: var(--accent-grad); -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero p.sub { font-size: 18px; color: var(--muted); max-width: 620px; margin: 0 auto 34px; line-height: 1.6; }
+  .hero .cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .hero .btn-primary { padding: 15px 30px; font-size: 15px; }
+  .hero .fineprint { margin-top: 16px; font-size: 13px; color: var(--muted); }
+
+  .badges { display: flex; gap: 10px; justify-content: center; margin-top: 46px; flex-wrap: wrap; }
+  .badge {
+    font-size: 13px; color: var(--text); background: var(--panel); border: 1px solid var(--border);
+    padding: 8px 16px; border-radius: 999px; display: flex; align-items: center; gap: 8px;
+  }
+  .badge .sw { width: 8px; height: 8px; border-radius: 50%; background: var(--sky); }
+
+  section.features { padding: 60px 0; }
+  .features h2 { text-align: center; font-size: 30px; margin: 0 0 10px; letter-spacing: -0.02em; }
+  .features p.lead { text-align: center; color: var(--muted); margin: 0 0 44px; }
+  .grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+  }
+  @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } .hero h1 { font-size: 36px; } }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 18px; padding: 26px;
+  }
+  .card .icon {
+    width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    background: var(--accent-grad); font-size: 20px; margin-bottom: 16px;
+  }
+  .card h3 { font-size: 16px; margin: 0 0 8px; }
+  .card p { font-size: 14px; color: var(--muted); line-height: 1.55; margin: 0; }
+
+  section.pricing { padding: 70px 0 90px; background: var(--panel); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .pricing .inner { text-align: center; }
+  .pricing h2 { font-size: 30px; margin: 0 0 10px; letter-spacing: -0.02em; }
+  .pricing p.lead { color: var(--muted); margin: 0 0 40px; }
+  .price-card {
+    max-width: 360px; margin: 0 auto; background: #fff; border: 1px solid var(--border); border-radius: 22px;
+    padding: 38px 32px; box-shadow: 0 20px 50px -25px rgba(124,58,237,0.35);
+  }
+  .price-card .amount { font-size: 48px; font-weight: 800; letter-spacing: -0.03em; }
+  .price-card .amount span { font-size: 16px; color: var(--muted); font-weight: 600; }
+  .price-card ul { list-style: none; padding: 0; margin: 26px 0; text-align: left; }
+  .price-card li { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; font-size: 14px; color: var(--text); }
+  .price-card li::before { content: "✓"; color: var(--accent2); font-weight: 800; }
+  .price-card .btn-primary { width: 100%; text-align: center; }
+
+  footer { padding: 40px 0; text-align: center; font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <div class="brand"><span class="dot"></span> Reelizate</div>
+      <nav class="top-links">
+        <a href="#features">Qué hace</a>
+        <a href="#pricing">Precio</a>
+        <a href="login.html">Iniciar sesión</a>
+        <a class="btn btn-primary" href="app.html">Probar gratis</a>
+      </nav>
+    </header>
+  </div>
+
+  <section class="hero">
+    <div class="wrap">
+      <span class="kicker">✨ 1 video gratis, sin tarjeta</span>
+      <h1>Subí tu video.<br />La <span class="grad">IA lo edita</span> por vos.</h1>
+      <p class="sub">Reelizate corta los silencios, le pone subtítulos animados, mejora el color y te escribe la descripción para Instagram — todo automático, listo para publicar.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="app.html">Probar con 1 video gratis</a>
+        <a class="btn btn-ghost" href="#features">Ver qué incluye</a>
+      </div>
+      <p class="fineprint">Sin registrarte para la muestra gratis · Después, USD 5/mes</p>
+      <div class="badges">
+        <span class="badge"><span class="sw"></span> Subtítulos automáticos</span>
+        <span class="badge"><span class="sw"></span> Corte de silencios</span>
+        <span class="badge"><span class="sw"></span> Descripción + hashtags</span>
+        <span class="badge"><span class="sw"></span> Generador de guiones</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="features" id="features">
+    <div class="wrap">
+      <h2>Todo lo que necesitás para publicar</h2>
+      <p class="lead">Subís el video una vez, Reelizate hace el resto.</p>
+      <div class="grid">
+        <div class="card">
+          <div class="icon">✂️</div>
+          <h3>Edición automática</h3>
+          <p>Corta silencios y muletillas, ajusta color y ritmo para que se vea profesional sin que edites un solo frame.</p>
+        </div>
+        <div class="card">
+          <div class="icon">💬</div>
+          <h3>Subtítulos animados</h3>
+          <p>Quemados directo en el video, con estilo moderno — los que más retienen audiencia en Reels y TikTok.</p>
+        </div>
+        <div class="card">
+          <div class="icon">📝</div>
+          <h3>Descripción lista</h3>
+          <p>La IA escribe la descripción y los hashtags para Instagram a partir de lo que decís en el video.</p>
+        </div>
+        <div class="card">
+          <div class="icon">🎬</div>
+          <h3>Generador de guiones</h3>
+          <p>¿No sabés qué grabar? Pedile ideas y ganchos de guion para tu próximo video, por nicho o tema.</p>
+        </div>
+        <div class="card">
+          <div class="icon">⚡</div>
+          <h3>Rápido</h3>
+          <p>Subís el video y en minutos tenés el resultado listo para descargar y publicar.</p>
+        </div>
+        <div class="card">
+          <div class="icon">🔒</div>
+          <h3>Tus videos, tuyos</h3>
+          <p>No usamos tu contenido para entrenar nada ni lo compartimos con nadie.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pricing" id="pricing">
+    <div class="wrap inner">
+      <h2>Un solo plan, simple</h2>
+      <p class="lead">Probás gratis, y si te sirve, seguís por muy poco.</p>
+      <div class="price-card">
+        <div class="amount">USD 5 <span>/ mes</span></div>
+        <ul>
+          <li>Videos ilimitados</li>
+          <li>Edición automática completa</li>
+          <li>Subtítulos + descripción + hashtags</li>
+          <li>Generador de guiones sin límite</li>
+          <li>Cancelás cuando quieras</li>
+        </ul>
+        <a class="btn btn-primary" href="app.html">Empezar con 1 video gratis</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">© Reelizate — hecho con Vercex Studio</div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "name": "reelizate",
+  "private": true,
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "@anthropic-ai/sdk": "^0.32.0",
+    "ffmpeg-static": "^5.2.0"
+  }
+}

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Reelizate — Mi cuenta</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="favicon-32.png" />
+<meta name="theme-color" content="#ffffff" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --bg: #ffffff; --panel: #faf8fc; --panel2: #f4eefa; --border: #e7e0f0;
+    --text: #14121a; --muted: #6b6575; --accent: #c026d3; --accent2: #7c3aed;
+    --accent-grad: linear-gradient(135deg, #ec4899, #8b5cf6); --sky: #0ea5e9;
+    --warn: #b45309; --error: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; }
+  header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 18px 26px; border-bottom: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 16px; }
+  .brand .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent-grad); }
+  header a { color: var(--muted); text-decoration: none; font-size: 13px; margin-left: 18px; }
+  header a:hover { color: var(--text); }
+  main { max-width: 760px; margin: 0 auto; padding: 36px 24px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 22px; }
+  .card h3 { margin: 0 0 10px; font-size: 14px; color: var(--muted); font-weight: 600; }
+  .status-pill { display: inline-block; margin-top: 6px; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .status-active { background: rgba(192,38,211,0.12); color: var(--accent); }
+  .status-past_due { background: rgba(180,83,9,0.12); color: var(--warn); }
+  .status-canceled, .status-none { background: rgba(220,38,38,0.12); color: var(--error); }
+  button {
+    padding: 11px 20px; border-radius: 10px; border: none; background: var(--accent-grad);
+    color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; margin-top: 14px;
+  }
+  button:disabled { opacity: .6; cursor: default; }
+  section h2 { font-size: 16px; margin-bottom: 12px; }
+  .job-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 16px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: 10px; font-size: 13px;
+  }
+  .job-item button { margin: 0; padding: 6px 12px; font-size: 12px; }
+  .empty { color: var(--muted); font-size: 14px; padding: 20px 0; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand"><span class="dot"></span> Reelizate</div>
+    <div>
+      <a href="app.html">+ Editar video</a>
+      <span id="userEmail" style="color: var(--muted); font-size: 13px; margin-left: 18px;"></span>
+      <a id="logoutBtn">Cerrar sesión</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="card">
+      <h3>Tu plan</h3>
+      <div style="font-size:20px; font-weight:700;">USD 5 / mes — videos ilimitados</div>
+      <span class="status-pill" id="statusPill">—</span>
+      <div id="subscribeArea"></div>
+    </div>
+
+    <section>
+      <h2>Tus videos</h2>
+      <div id="jobsList"><div class="empty">Cargando...</div></div>
+    </section>
+  </main>
+
+  <script src="supabase-config.js"></script>
+  <script>
+    async function init() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) { window.location.href = "login.html"; return; }
+
+      document.getElementById("userEmail").textContent = session.user.email;
+      document.getElementById("logoutBtn").addEventListener("click", async () => {
+        await supabaseClient.auth.signOut();
+        window.location.href = "login.html";
+      });
+
+      const { data: profile } = await supabaseClient.from("profiles").select("*").eq("id", session.user.id).single();
+      const status = profile?.subscription_status || "none";
+
+      const pill = document.getElementById("statusPill");
+      pill.textContent = { active: "Activa", past_due: "Pago pendiente", canceled: "Cancelada", none: "Sin suscripción" }[status] || status;
+      pill.className = "status-pill status-" + status;
+
+      const subscribeArea = document.getElementById("subscribeArea");
+      if (status !== "active") {
+        subscribeArea.innerHTML = `<div><button id="subscribeBtn">Suscribirme por USD 5/mes</button></div>
+          <div id="subscribeStatus" style="font-size:12px; color:var(--muted); margin-top:8px;"></div>`;
+        document.getElementById("subscribeBtn").addEventListener("click", async () => {
+          const btn = document.getElementById("subscribeBtn");
+          const statusEl = document.getElementById("subscribeStatus");
+          btn.disabled = true;
+          statusEl.textContent = "Generando el link de pago...";
+          try {
+            const resp = await fetch("/api/create-subscription", {
+              method: "POST",
+              headers: { "content-type": "application/json", Authorization: `Bearer ${session.access_token}` },
+            });
+            const data = await resp.json();
+            if (!resp.ok || !data.init_point) throw new Error(data.error || "No se pudo generar el pago");
+            window.location.href = data.init_point;
+          } catch (err) {
+            statusEl.textContent = "Error: " + (err.message || err);
+            btn.disabled = false;
+          }
+        });
+      }
+
+      const { data: jobs } = await supabaseClient
+        .from("video_jobs")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      const statusLabels = { processing: "Procesando...", done: "Listo", failed: "Falló" };
+      const list = document.getElementById("jobsList");
+      if (!jobs || jobs.length === 0) {
+        list.innerHTML = '<div class="empty">Todavía no editaste ningún video.</div>';
+      } else {
+        list.innerHTML = jobs.map((j, i) => `
+          <div class="job-item">
+            <span>${j.original_filename || "Sin nombre"} — ${new Date(j.created_at).toLocaleDateString("es-AR")} — ${statusLabels[j.status] || j.status}</span>
+            ${j.status === "done" && j.result_path ? `<button class="download-job-btn" data-i="${i}">⬇ Descargar</button>` : ""}
+          </div>
+        `).join("");
+        list.querySelectorAll(".download-job-btn").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            const job = jobs[Number(btn.dataset.i)];
+            const { data: signed } = await supabaseClient.storage.from("reel-files").createSignedUrl(job.result_path, 3600);
+            if (signed?.signedUrl) window.open(signed.signedUrl, "_blank");
+          });
+        });
+      }
+    }
+    init();
+  </script>
+</body>
+</html>

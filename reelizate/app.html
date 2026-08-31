@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Reelizate — Editá tu video</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="favicon-32.png" />
+<meta name="theme-color" content="#ffffff" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --bg: #ffffff; --panel: #faf8fc; --panel2: #f4eefa; --border: #e7e0f0;
+    --text: #14121a; --muted: #6b6575; --accent: #c026d3; --accent2: #7c3aed;
+    --accent-grad: linear-gradient(135deg, #ec4899, #8b5cf6); --sky: #0ea5e9; --error: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; }
+
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 26px; border-bottom: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 16px; }
+  .brand .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent-grad); }
+  .topbar-right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); }
+  .topbar-right a { color: var(--text); text-decoration: none; }
+  .topbar-right a:hover { color: var(--accent); }
+  .plan-chip { background: var(--panel2); border: 1px solid var(--border); padding: 4px 12px; border-radius: 999px; font-size: 12px; }
+
+  main { max-width: 720px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  .mode-tabs { display: flex; gap: 8px; margin-bottom: 26px; }
+  .mode-tab {
+    flex: 1; text-align: center; padding: 12px; border-radius: 12px; cursor: pointer;
+    border: 1px solid var(--border); color: var(--muted); font-weight: 700; font-size: 14px;
+  }
+  .mode-tab.active { background: var(--panel2); color: var(--accent); border-color: var(--accent); }
+
+  h2.page-title { font-size: 22px; margin: 0 0 6px; }
+  p.page-sub { color: var(--muted); margin: 0 0 26px; font-size: 14px; }
+
+  .dropzone {
+    border: 2px dashed var(--border); border-radius: 18px; padding: 46px 24px; text-align: center;
+    cursor: pointer; transition: border-color .15s ease, background .15s ease;
+  }
+  .dropzone:hover, .dropzone.dragover { border-color: var(--accent); background: var(--panel2); }
+  .dropzone .icon { font-size: 34px; margin-bottom: 10px; }
+  .dropzone p { margin: 0; color: var(--muted); font-size: 14px; }
+  #fileInput { display: none; }
+
+  .file-chip {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px 16px; margin-top: 16px; font-size: 14px;
+  }
+
+  button.btn-primary {
+    width: 100%; padding: 14px; border-radius: 12px; border: none; background: var(--accent-grad);
+    color: #fff; font-weight: 700; font-size: 15px; cursor: pointer; margin-top: 18px;
+  }
+  button.btn-primary:disabled { opacity: .5; cursor: default; }
+  button.btn-secondary {
+    width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--panel2);
+    color: var(--text); font-weight: 700; font-size: 14px; cursor: pointer; margin-top: 10px;
+  }
+
+  .status-line { margin-top: 16px; font-size: 13px; color: var(--muted); text-align: center; }
+  .status-line.error { color: var(--error); }
+
+  .banner {
+    margin-top: 20px; background: var(--panel2); border: 1px solid var(--accent); border-radius: 14px;
+    padding: 18px 20px; text-align: center; font-size: 14px;
+  }
+  .banner a.btn-primary { display: inline-block; width: auto; margin-top: 12px; padding: 10px 22px; text-decoration: none; }
+
+  .result-card {
+    margin-top: 26px; background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 24px;
+  }
+  .result-card h3 { margin: 0 0 14px; font-size: 15px; }
+  .result-card video { width: 100%; border-radius: 12px; background: #000; margin-bottom: 16px; }
+  .caption-box {
+    background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 14px; font-size: 13px;
+    line-height: 1.6; white-space: pre-wrap; margin-bottom: 10px;
+  }
+  .hashtags { color: var(--accent2); font-size: 13px; margin-bottom: 14px; }
+  .copy-btn {
+    font-size: 12px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);
+    background: #fff; cursor: pointer; color: var(--text);
+  }
+  a.download-btn {
+    display: block; text-align: center; text-decoration: none; margin-top: 4px; padding: 13px; border-radius: 12px;
+    background: var(--accent-grad); color: #fff; font-weight: 700; font-size: 14px;
+  }
+
+  textarea#scriptTopic {
+    width: 100%; padding: 13px 14px; border-radius: 12px; border: 1px solid var(--border);
+    background: #fff; color: var(--text); font-size: 14px; min-height: 90px; resize: vertical; font-family: inherit;
+  }
+  .script-result {
+    margin-top: 20px; background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+    padding: 20px; font-size: 14px; line-height: 1.7; white-space: pre-wrap;
+  }
+</style>
+</head>
+<body>
+  <header class="topbar" id="topbar" style="display:none;">
+    <div class="brand"><span class="dot"></span> Reelizate</div>
+    <div class="topbar-right">
+      <span class="plan-chip" id="planChip">—</span>
+      <a href="dashboard.html">Mi cuenta</a>
+      <a id="logoutBtn">Cerrar sesión</a>
+    </div>
+  </header>
+  <header class="topbar" id="topbarAnon">
+    <div class="brand"><span class="dot"></span> Reelizate</div>
+    <div class="topbar-right">
+      <a href="login.html">Iniciar sesión</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="mode-tabs">
+      <div class="mode-tab active" data-mode="video">Editar video</div>
+      <div class="mode-tab" data-mode="script">Generador de guiones</div>
+    </div>
+
+    <div id="videoPanel">
+      <h2 class="page-title">Subí tu video</h2>
+      <p class="page-sub" id="videoSub">Le cortamos los silencios, le ponemos subtítulos, mejoramos el color y te armamos la descripción para Instagram.</p>
+
+      <div class="dropzone" id="dropzone">
+        <div class="icon">🎬</div>
+        <p><strong>Hacé clic para elegir un video</strong> o arrastralo acá</p>
+      </div>
+      <input type="file" id="fileInput" accept="video/mp4,video/quicktime" />
+      <div id="fileChipWrap"></div>
+
+      <button class="btn-primary" id="processBtn" disabled>Editar con IA</button>
+      <div class="status-line" id="statusLine"></div>
+
+      <div class="banner" id="limitBanner" style="display:none;">
+        <span id="limitText">Ya usaste tu video de muestra gratis.</span><br />
+        <a class="btn-primary" href="login.html">Crear cuenta y suscribirme (USD 5/mes)</a>
+      </div>
+
+      <div class="result-card" id="resultCard" style="display:none;"></div>
+    </div>
+
+    <div id="scriptPanel" style="display:none;">
+      <h2 class="page-title">Generador de guiones</h2>
+      <p class="page-sub">Contanos el tema o nicho de tu próximo video y te tiramos ganchos y estructura de guion.</p>
+      <textarea id="scriptTopic" placeholder="Ej: tips de entrenamiento para principiantes en el gimnasio"></textarea>
+      <button class="btn-primary" id="scriptBtn">Generar guion</button>
+      <div class="status-line" id="scriptStatus"></div>
+      <div class="script-result" id="scriptResult" style="display:none;"></div>
+    </div>
+  </main>
+
+  <script src="supabase-config.js"></script>
+  <script>
+    let currentSession = null;
+    let selectedFile = null;
+    let subscriptionActive = false;
+
+    document.querySelectorAll(".mode-tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".mode-tab").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        const mode = tab.dataset.mode;
+        document.getElementById("videoPanel").style.display = mode === "video" ? "block" : "none";
+        document.getElementById("scriptPanel").style.display = mode === "script" ? "block" : "none";
+      });
+    });
+
+    // ---- Subida de video ----
+    const dropzone = document.getElementById("dropzone");
+    const fileInput = document.getElementById("fileInput");
+    const fileChipWrap = document.getElementById("fileChipWrap");
+    const processBtn = document.getElementById("processBtn");
+    const statusLine = document.getElementById("statusLine");
+    const resultCard = document.getElementById("resultCard");
+
+    dropzone.addEventListener("click", () => fileInput.click());
+    dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("dragover"); });
+    dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+    dropzone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropzone.classList.remove("dragover");
+      if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener("change", () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
+
+    function setFile(file) {
+      if (file.type !== "video/mp4" && file.type !== "video/quicktime") {
+        statusLine.textContent = "Por ahora solo aceptamos videos MP4 o MOV.";
+        return;
+      }
+      selectedFile = file;
+      fileChipWrap.innerHTML = `<div class="file-chip"><span>🎬 ${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)</span></div>`;
+      // si hay sesión, solo habilitamos el botón cuando la suscripción está
+      // activa — si no hay sesión, es la muestra gratis (el límite lo aplica
+      // el backend por IP, no el frontend).
+      processBtn.disabled = !!currentSession && !subscriptionActive;
+      statusLine.textContent = "";
+      resultCard.style.display = "none";
+    }
+
+    processBtn.addEventListener("click", async () => {
+      if (!selectedFile) return;
+      processBtn.disabled = true;
+      resultCard.style.display = "none";
+      statusLine.textContent = "Subiendo video...";
+      statusLine.className = "status-line";
+
+      try {
+        const fileBuffer = await selectedFile.arrayBuffer();
+
+        if (currentSession) {
+          // ---- flujo autenticado ----
+          const userId = currentSession.user.id;
+          const path = `${userId}/originals/${Date.now()}-${selectedFile.name}`;
+          const { error: upErr } = await supabaseClient.storage
+            .from("reel-files")
+            .upload(path, fileBuffer, { contentType: selectedFile.type });
+          if (upErr) throw upErr;
+
+          const { data: job, error: jobErr } = await supabaseClient
+            .from("video_jobs")
+            .insert({ user_id: userId, original_filename: selectedFile.name, input_path: path, status: "processing" })
+            .select()
+            .single();
+          if (jobErr) throw jobErr;
+
+          statusLine.textContent = "Editando tu video con IA (puede tardar unos minutos)...";
+          await fetch("/api/edit-video", {
+            method: "POST",
+            headers: { "content-type": "application/json", Authorization: `Bearer ${currentSession.access_token}` },
+            body: JSON.stringify({ jobId: job.id, kind: "video_jobs" }),
+          });
+          await pollJob(job.id, "video_jobs");
+        } else {
+          // ---- flujo de muestra gratis, sin cuenta ----
+          const path = `trial/${Date.now()}-${selectedFile.name}`;
+          const { error: upErr } = await supabaseClient.storage
+            .from("reel-files")
+            .upload(path, fileBuffer, { contentType: selectedFile.type });
+          if (upErr) throw upErr;
+
+          const resp = await fetch("/api/start-trial-job", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ originalFilename: selectedFile.name, inputPath: path }),
+          });
+          const data = await resp.json();
+          if (!resp.ok) {
+            if (resp.status === 429) {
+              document.getElementById("limitBanner").style.display = "block";
+              statusLine.textContent = "";
+              processBtn.disabled = true;
+              return;
+            }
+            throw new Error(data.error || "No se pudo iniciar el trabajo.");
+          }
+
+          statusLine.textContent = "Editando tu video con IA (puede tardar unos minutos)...";
+          await pollJob(data.jobId, "trial_jobs");
+        }
+      } catch (err) {
+        statusLine.textContent = "Error: " + (err.message || err);
+        statusLine.className = "status-line error";
+        processBtn.disabled = false;
+      }
+    });
+
+    async function pollJob(jobId, table, attempt = 0) {
+      if (attempt > 150) {
+        statusLine.textContent = "Está tardando más de lo esperado. Volvé a la página en unos minutos.";
+        processBtn.disabled = false;
+        return;
+      }
+      const { data: job } = await supabaseClient.from(table).select("*").eq("id", jobId).single();
+      if (!job || job.status === "processing") {
+        setTimeout(() => pollJob(jobId, table, attempt + 1), 3000);
+        return;
+      }
+      if (job.status === "failed") {
+        statusLine.textContent = "No pudimos editar el video: " + (job.report?.error || "error desconocido");
+        statusLine.className = "status-line error";
+        processBtn.disabled = false;
+        return;
+      }
+      statusLine.textContent = "¡Listo!";
+      processBtn.disabled = table === "trial_jobs"; // la muestra gratis ya se usó
+      await showResult(job, table);
+    }
+
+    async function showResult(job, table) {
+      const { data: signed } = await supabaseClient.storage.from("reel-files").createSignedUrl(job.result_path, 3600);
+      resultCard.style.display = "block";
+      resultCard.innerHTML = `
+        <h3>Tu video editado</h3>
+        ${signed?.signedUrl ? `<video controls src="${signed.signedUrl}"></video>` : ""}
+        <div class="caption-box" id="captionBox">${(job.caption || "").replace(/</g, "&lt;")}</div>
+        <div class="hashtags">${(job.hashtags || []).map(h => "#" + h).join(" ")}</div>
+        <button class="copy-btn" id="copyCaptionBtn">Copiar descripción</button>
+        ${signed?.signedUrl ? `<a class="download-btn" href="${signed.signedUrl}" download>⬇ Descargar video editado</a>` : ""}
+        ${table === "trial_jobs" ? `<div class="banner" style="margin-top:18px;">¿Te sirvió? <a class="btn-primary" href="login.html">Crear cuenta y seguir por USD 5/mes</a></div>` : ""}
+      `;
+      document.getElementById("copyCaptionBtn").addEventListener("click", () => {
+        const text = (job.caption || "") + "\n\n" + (job.hashtags || []).map(h => "#" + h).join(" ");
+        navigator.clipboard.writeText(text);
+      });
+    }
+
+    // ---- Generador de guiones ----
+    const scriptBtn = document.getElementById("scriptBtn");
+    const scriptTopic = document.getElementById("scriptTopic");
+    const scriptStatus = document.getElementById("scriptStatus");
+    const scriptResult = document.getElementById("scriptResult");
+
+    scriptBtn.addEventListener("click", async () => {
+      const topic = scriptTopic.value.trim();
+      if (!topic) { scriptStatus.textContent = "Contanos sobre qué querés el guion."; return; }
+      if (!currentSession) { window.location.href = "login.html"; return; }
+
+      scriptBtn.disabled = true;
+      scriptResult.style.display = "none";
+      scriptStatus.textContent = "Generando...";
+      scriptStatus.className = "status-line";
+
+      try {
+        const resp = await fetch("/api/generate-script", {
+          method: "POST",
+          headers: { "content-type": "application/json", Authorization: `Bearer ${currentSession.access_token}` },
+          body: JSON.stringify({ topic }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || "No se pudo generar el guion.");
+        scriptResult.style.display = "block";
+        scriptResult.textContent = data.script;
+        scriptStatus.textContent = "";
+      } catch (err) {
+        scriptStatus.textContent = "Error: " + (err.message || err);
+        scriptStatus.className = "status-line error";
+      } finally {
+        scriptBtn.disabled = false;
+      }
+    });
+
+    // ---- Sesión / gate de suscripción ----
+    async function init() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      currentSession = session;
+
+      if (!session) {
+        document.getElementById("topbarAnon").style.display = "";
+        document.getElementById("videoSub").textContent =
+          "Probá 1 video gratis, sin crear cuenta. Después, USD 5/mes por videos ilimitados.";
+        return;
+      }
+
+      document.getElementById("topbar").style.display = "";
+      document.getElementById("logoutBtn").addEventListener("click", async () => {
+        await supabaseClient.auth.signOut();
+        window.location.href = "login.html";
+      });
+
+      const { data: profile } = await supabaseClient.from("profiles").select("*").eq("id", session.user.id).single();
+      subscriptionActive = profile?.subscription_status === "active";
+      document.getElementById("planChip").textContent = subscriptionActive ? "Suscripto · Ilimitado" : "Sin suscripción activa";
+
+      if (!subscriptionActive) {
+        document.getElementById("limitBanner").innerHTML =
+          `<span>Necesitás una suscripción activa para editar videos.</span><br />
+           <a class="btn-primary" href="dashboard.html">Suscribirme (USD 5/mes)</a>`;
+        document.getElementById("limitBanner").style.display = "block";
+        processBtn.disabled = true;
+      }
+    }
+    init();
+  </script>
+  <script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(function(){});}</script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Reelizate — Iniciar sesión</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="favicon-32.png" />
+<meta name="theme-color" content="#ffffff" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --bg: #ffffff; --panel: #faf8fc; --panel2: #f4eefa; --border: #e7e0f0;
+    --text: #14121a; --muted: #6b6575; --accent: #c026d3; --accent2: #7c3aed;
+    --accent-grad: linear-gradient(135deg, #ec4899, #8b5cf6); --error: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .card { width: 100%; max-width: 380px; background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 34px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 17px; margin-bottom: 22px; }
+  .brand .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent-grad); }
+  h2 { font-size: 20px; margin: 0 0 6px; }
+  p.sub { color: var(--muted); font-size: 13px; margin: 0 0 22px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+  .tab {
+    flex: 1; text-align: center; padding: 10px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--border); color: var(--muted); font-weight: 600; font-size: 13px;
+  }
+  .tab.active { background: #fff; color: var(--accent); border-color: var(--accent); }
+  input {
+    width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border);
+    background: #fff; color: var(--text); font-size: 14px; margin-bottom: 12px;
+  }
+  button.btn-primary {
+    width: 100%; padding: 13px; border-radius: 10px; border: none; background: var(--accent-grad);
+    color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; margin-top: 6px;
+  }
+  button.btn-primary:disabled { opacity: .6; cursor: default; }
+  .status { margin-top: 14px; font-size: 13px; text-align: center; color: var(--muted); }
+  .status.error { color: var(--error); }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand"><span class="dot"></span> Reelizate</div>
+    <div class="tabs">
+      <div class="tab active" data-mode="login">Iniciar sesión</div>
+      <div class="tab" data-mode="signup">Crear cuenta</div>
+    </div>
+    <h2 id="formTitle">Bienvenido de nuevo</h2>
+    <p class="sub" id="formSub">Entrá para ver tus videos y tu suscripción.</p>
+
+    <input type="email" id="email" placeholder="Email" autocomplete="email" />
+    <input type="password" id="password" placeholder="Contraseña" autocomplete="current-password" />
+
+    <button class="btn-primary" id="submitBtn">Iniciar sesión</button>
+    <div class="status" id="statusLine"></div>
+  </div>
+
+  <script src="supabase-config.js"></script>
+  <script>
+    let mode = "login";
+    const tabs = document.querySelectorAll(".tab");
+    const formTitle = document.getElementById("formTitle");
+    const formSub = document.getElementById("formSub");
+    const submitBtn = document.getElementById("submitBtn");
+    const statusLine = document.getElementById("statusLine");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+
+    tabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        tabs.forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        mode = tab.dataset.mode;
+        if (mode === "login") {
+          formTitle.textContent = "Bienvenido de nuevo";
+          formSub.textContent = "Entrá para ver tus videos y tu suscripción.";
+          submitBtn.textContent = "Iniciar sesión";
+          passwordInput.autocomplete = "current-password";
+        } else {
+          formTitle.textContent = "Creá tu cuenta";
+          formSub.textContent = "Necesitás una cuenta para seguir editando videos después de la muestra gratis.";
+          submitBtn.textContent = "Crear cuenta";
+          passwordInput.autocomplete = "new-password";
+        }
+        statusLine.textContent = "";
+        statusLine.className = "status";
+      });
+    });
+
+    submitBtn.addEventListener("click", async () => {
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+      if (!email || !password) {
+        statusLine.textContent = "Completá email y contraseña.";
+        statusLine.className = "status error";
+        return;
+      }
+      submitBtn.disabled = true;
+      statusLine.textContent = "Un momento...";
+      statusLine.className = "status";
+
+      try {
+        if (mode === "signup") {
+          const { error } = await supabaseClient.auth.signUp({ email, password });
+          if (error) throw error;
+          statusLine.textContent = "¡Cuenta creada! Si te pide confirmar el email, revisá tu bandeja de entrada.";
+        } else {
+          const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+        }
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) window.location.href = "app.html";
+      } catch (err) {
+        statusLine.textContent = err.message || "Algo salió mal.";
+        statusLine.className = "status error";
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    passwordInput.addEventListener("keydown", (e) => { if (e.key === "Enter") submitBtn.click(); });
+  </script>
+</body>
+</html>

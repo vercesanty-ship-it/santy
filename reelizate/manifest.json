@@ -1,0 +1,14 @@
+{
+  "name": "Reelizate",
+  "short_name": "Reelizate",
+  "description": "IA que edita tus videos para Instagram: subtítulos, descripción y guiones automáticos.",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

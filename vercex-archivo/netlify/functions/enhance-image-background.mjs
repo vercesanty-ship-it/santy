@@ -14,6 +14,24 @@ const UPSCALE_MODEL = "nightmareai/real-esrgan"; // input: image, scale, face_en
 const BG_REMOVE_MODEL = "cjwbw/rembg"; // input: image
 const PRINT_DPI = 300;
 
+// Límite real observado en real-esrgan: la GPU del modelo rechaza imágenes
+// de más de ~2.1 megapíxeles ("Resize input image and try again"). Si el
+// diseño subido es más grande, lo achicamos nosotros antes de mandarlo —
+// sigue entrando bien de sobra para diseños de estampado.
+const REPLICATE_MAX_PIXELS = 2_000_000;
+
+async function fitWithinPixelBudget(buffer, maxPixels) {
+  const meta = await sharp(buffer).metadata();
+  const totalPixels = (meta.width || 0) * (meta.height || 0);
+  if (!meta.width || !meta.height || totalPixels <= maxPixels) {
+    return sharp(buffer).png().toBuffer();
+  }
+  const scale = Math.sqrt(maxPixels / totalPixels);
+  const width = Math.max(1, Math.floor(meta.width * scale));
+  const height = Math.max(1, Math.floor(meta.height * scale));
+  return sharp(buffer).resize(width, height, { fit: "inside" }).png().toBuffer();
+}
+
 async function replicatePredict(model, input, token) {
   const createRes = await fetch(`${REPLICATE_API}/models/${model}/predictions`, {
     method: "POST",
@@ -140,7 +158,8 @@ export default async (req) => {
     if (beforeUpErr) throw new Error(`No se pudo guardar la imagen original: ${beforeUpErr.message}`);
 
     // 1) Mejora nitidez/detalle (upscale con IA)
-    const beforeDataUrl = `data:image/png;base64,${beforePng.toString("base64")}`;
+    const upscaleInputPng = await fitWithinPixelBudget(beforePng, REPLICATE_MAX_PIXELS);
+    const beforeDataUrl = `data:image/png;base64,${upscaleInputPng.toString("base64")}`;
     const upscaledUrl = await replicatePredict(
       UPSCALE_MODEL,
       { image: beforeDataUrl, scale: 4, face_enhance: false },
@@ -148,9 +167,9 @@ export default async (req) => {
     );
     let resultBuffer = await fetchBuffer(upscaledUrl);
 
-    // 2) Quita el fondo, si se pidió
+    // 2) Quita el fondo, si se pidió (mismo límite de tamaño por las dudas)
     if (job.remove_background) {
-      const resultPngForBg = await sharp(resultBuffer).png().toBuffer();
+      const resultPngForBg = await fitWithinPixelBudget(resultBuffer, REPLICATE_MAX_PIXELS);
       const resultDataUrl = `data:image/png;base64,${resultPngForBg.toString("base64")}`;
       const noBgUrl = await replicatePredict(BG_REMOVE_MODEL, { image: resultDataUrl }, replicateToken);
       resultBuffer = await fetchBuffer(noBgUrl);

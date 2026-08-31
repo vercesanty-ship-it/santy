@@ -1,0 +1,877 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vercex Archivo — Corrección de archivos para imprenta</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="favicon-32.png" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="theme-color" content="#0a0a0d" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase-config.js"></script>
+<style>
+  :root {
+    --bg: #0a0a0d;
+    --panel: #15121b;
+    --panel2: #1c1622;
+    --border: #2a2432;
+    --text: #f5f2f6;
+    --muted: #a39aa8;
+    --accent: #ff2d87;
+    --accent2: #2f6bff;
+    --accent-grad: linear-gradient(135deg, #ff2d87, #2f6bff);
+    --warn: #ffb84d;
+    --error: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 26px; border-bottom: 1px solid var(--border); background: var(--panel);
+  }
+  .topbar .brand { display: flex; align-items: center; gap: 10px; }
+  .topbar .brand .logo { height: 28px; width: auto; display: block; }
+  .topbar .brand h1 { font-size: 15px; margin: 0; font-weight: 700; }
+  .topbar-right { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+  .topbar-right .plan-chip { background: var(--panel2); border: 1px solid var(--border); color: var(--muted); padding: 4px 10px; border-radius: 20px; font-size: 12px; }
+  .topbar-right .plan-chip.warn { color: var(--warn); border-color: #ffb84d44; }
+  .topbar-right span.email { color: var(--muted); }
+  .topbar-right a { color: var(--text); text-decoration: none; cursor: pointer; }
+  .topbar-right a:hover { color: var(--accent); }
+
+  .block-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .block-card { max-width: 420px; background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 34px; text-align: center; }
+  .block-card h2 { font-size: 20px; margin: 0 0 12px; }
+  .block-card p { color: var(--muted); font-size: 14px; line-height: 1.6; margin: 0 0 22px; }
+  .block-card a.btn-primary { display: inline-block; text-decoration: none; padding: 12px 22px; }
+
+  main { max-width: 760px; margin: 0 auto; padding: 40px 24px; }
+  h2.page-title { font-size: 22px; margin: 0 0 6px; }
+  p.page-sub { color: var(--muted); margin: 0 0 28px; font-size: 14px; }
+
+  .dropzone {
+    border: 2px dashed var(--border); border-radius: 16px; padding: 44px 24px;
+    text-align: center; cursor: pointer; transition: border-color .15s ease, background .15s ease;
+  }
+  .dropzone:hover, .dropzone.dragover { border-color: var(--accent); background: rgba(255,45,135,0.05); }
+  .mode-tab.active { background: var(--panel2); color: var(--accent); border-color: var(--accent) !important; }
+  .plancha-file-item {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; margin-top: 10px; font-size: 13px;
+  }
+  .plancha-file-item button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; }
+  .plancha-file-item button:hover { color: var(--error); }
+  .dropzone p { margin: 0; color: var(--muted); font-size: 14px; }
+  .dropzone .icon { font-size: 32px; margin-bottom: 10px; }
+  #fileInput, #planchaFileInput { display: none; }
+
+  .file-chip {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 16px; margin-top: 16px; font-size: 14px;
+  }
+  button { cursor: pointer; font-weight: 700; border: none; border-radius: 8px; padding: 12px 20px; font-size: 14px; }
+  button:disabled { opacity: .5; cursor: default; }
+  .btn-primary { background: var(--accent-grad); color: #fff; width: 100%; margin-top: 18px; }
+  .btn-secondary { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
+
+  .status-line { margin-top: 16px; font-size: 13px; color: var(--muted); text-align: center; }
+
+  .report-card {
+    margin-top: 24px; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 14px; padding: 22px;
+  }
+  .report-card h3 { margin: 0 0 14px; font-size: 15px; }
+  .report-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .report-row:last-child { border-bottom: none; }
+  .report-row span:first-child { color: var(--muted); }
+  .download-btn { display: block; text-align: center; text-decoration: none; margin-top: 18px; }
+</style>
+</head>
+<body>
+  <header class="topbar" id="topbar" style="display:none;">
+    <div class="brand"><img class="logo" src="vercex-studio-logo.png" alt="Vercex Studio" /><h1>Vercex Archivo</h1></div>
+    <div class="topbar-right">
+      <span class="plan-chip" id="planChip">—</span>
+      <span class="email" id="userEmail"></span>
+      <a href='/dashboard'>Mi cuenta</a>
+      <a id="logoutBtn">Cerrar sesión</a>
+    </div>
+  </header>
+
+  <div class="block-screen" id="blockScreen" style="display:none;">
+    <div class="block-card">
+      <h2 id="blockTitle">Acceso restringido</h2>
+      <p id="blockText"></p>
+      <a class='btn-primary' href='/dashboard'>Ir a mi cuenta</a>
+    </div>
+  </div>
+
+  <main id="appRoot" style="display:none;">
+    <div class="mode-tabs" style="display:flex; gap:8px; margin-bottom:24px;">
+      <div class="mode-tab active" data-mode="check" style="flex:1; text-align:center; padding:12px; border-radius:10px; cursor:pointer; border:1px solid var(--border); background:var(--panel2); color:var(--accent); font-weight:600;">Revisar y corregir</div>
+      <div class="mode-tab" data-mode="plancha" style="flex:1; text-align:center; padding:12px; border-radius:10px; cursor:pointer; border:1px solid var(--border); color:var(--muted); font-weight:600;">Armar plancha</div>
+      <div class="mode-tab" data-mode="enhance" style="flex:1; text-align:center; padding:12px; border-radius:10px; cursor:pointer; border:1px solid var(--border); color:var(--muted); font-weight:600;">Corrección de IA</div>
+    </div>
+
+    <div id="checkPanel">
+      <h2 class="page-title">Revisá y corregí tu archivo</h2>
+      <p class="page-sub">Subí el PDF con tu diseño — revisamos resolución, tamaño y sangrado, y te devolvemos un archivo listo para imprimir.</p>
+
+      <div class="dropzone" id="dropzone">
+        <div class="icon">📄</div>
+        <p><strong>Hacé clic para elegir un PDF</strong> o arrastralo acá</p>
+      </div>
+      <input type="file" id="fileInput" accept="application/pdf" />
+
+      <div id="fileChipWrap"></div>
+
+      <button class="btn-primary" id="processBtn" disabled>Revisar y corregir archivo</button>
+      <div class="status-line" id="statusLine"></div>
+      <div id="limitBanner" style="display:none; margin-top:16px; background:var(--panel2); border:1px solid var(--accent); border-radius:12px; padding:16px 18px; text-align:center;">
+        <p style="margin:0 0 10px; font-size:14px;">Alcanzaste el límite de tu plan este mes.</p>
+        <a class='btn-primary' href='/dashboard' style='display:inline-block; width:auto; padding:10px 20px; margin:0; text-decoration:none;'>Ver opciones de upgrade</a>
+      </div>
+
+      <div class="report-card" id="reportCard" style="display:none;"></div>
+    </div>
+
+    <div id="planchaPanel" style="display:none;">
+      <h2 class="page-title">Armá tu plancha</h2>
+      <p class="page-sub">Subí varias imágenes (tus diseños) y las acomodamos en una plancha de 58cm de ancho, aprovechando el material.</p>
+
+      <div class="dropzone" id="planchaDropzone">
+        <div class="icon">🖼️</div>
+        <p><strong>Hacé clic para elegir imágenes</strong> o arrastralas acá (podés elegir varias)</p>
+      </div>
+      <input type="file" id="planchaFileInput" accept="image/png,image/jpeg" multiple />
+
+      <label style="display:flex; align-items:center; gap:8px; margin:16px 0 6px; font-size:13px; color:var(--text); cursor:pointer;">
+        <input type="checkbox" id="sameSizeCheckbox" style="width:16px; height:16px;" />
+        Usar el mismo tamaño para todos los diseños
+      </label>
+      <div id="sameSizeInputs" style="display:none; gap:8px; margin-bottom:10px;">
+        <input type="number" id="sameSizeWidth" min="0.5" step="0.1" placeholder="Ancho (cm)" style="width:100%; padding:11px 13px; border-radius:8px; border:1px solid var(--border); background:var(--panel2); color:var(--text); font-size:14px;" />
+        <input type="number" id="sameSizeHeight" min="0.5" step="0.1" placeholder="Alto (cm)" style="width:100%; padding:11px 13px; border-radius:8px; border:1px solid var(--border); background:var(--panel2); color:var(--text); font-size:14px;" />
+      </div>
+
+      <div id="planchaFileList"></div>
+      <p style="font-size:12px; color:var(--muted); margin:10px 0 0;">"Repetir X veces" es opcional: si lo dejás vacío, ese diseño se acomoda automáticamente para aprovechar el material; si ponés un número, se repite exactamente esa cantidad de veces.</p>
+
+      <label style="display:block; font-size:13px; color:var(--muted); margin:16px 0 6px;">¿Cuántos metros de plancha querés?</label>
+      <input type="number" id="metrosInput" min="0.1" step="0.1" placeholder="Ej: 1.5" style="width:100%; padding:11px 13px; border-radius:8px; border:1px solid var(--border); background:var(--panel2); color:var(--text); font-size:14px;" />
+      <p style="font-size:12px; color:var(--muted); margin:6px 0 0;">Ancho fijo: 58cm. El largo lo definís vos según cuánta tela/material tenés.</p>
+
+      <p style="font-size:12px; color:var(--muted); margin:0 0 16px;">¿Necesitás quitarle el fondo a algún diseño? Hacelo antes desde la pestaña "Corrección de IA" y después subilo acá.</p>
+
+      <button class="btn-primary" id="planchaBtn" disabled>Armar plancha</button>
+      <div class="status-line" id="planchaStatusLine"></div>
+      <div id="planchaLimitBanner" style="display:none; margin-top:16px; background:var(--panel2); border:1px solid var(--accent); border-radius:12px; padding:16px 18px; text-align:center;">
+        <p style="margin:0 0 10px; font-size:14px;">Alcanzaste el límite de tu plan este mes.</p>
+        <a class='btn-primary' href='/dashboard' style='display:inline-block; width:auto; padding:10px 20px; margin:0; text-decoration:none;'>Ver opciones de upgrade</a>
+      </div>
+
+      <div class="report-card" id="planchaReportCard" style="display:none;"></div>
+    </div>
+
+    <div id="enhancePanel" style="display:none;">
+      <h2 class="page-title">Mejorá una imagen con IA</h2>
+      <p class="page-sub">Subí una imagen (PNG o JPG) y la IA le mejora la nitidez y el detalle. Útil para diseños borrosos o de baja calidad antes de imprimirlos.</p>
+
+      <div class="dropzone" id="enhanceDropzone">
+        <div class="icon">✨</div>
+        <p><strong>Hacé clic para elegir una imagen</strong> o arrastrala acá</p>
+      </div>
+      <input type="file" id="enhanceFileInput" accept="image/png,image/jpeg" />
+
+      <div id="enhanceFileChipWrap"></div>
+
+      <label style="display:flex; align-items:center; gap:8px; margin:16px 0 6px; font-size:13px; color:var(--text); cursor:pointer;">
+        <input type="checkbox" id="enhanceRemoveBgCheckbox" style="width:16px; height:16px;" />
+        Quitarle el fondo a esta imagen
+      </label>
+      <p style="font-size:12px; color:var(--muted); margin:0 0 10px;">Se aplica después de mejorarla con IA, así el resultado queda limpio y sin fondo.</p>
+
+      <button class="btn-primary" id="enhanceStandaloneBtn" disabled>Mejorar con IA</button>
+      <div class="status-line" id="enhanceStandaloneStatus"></div>
+      <div id="enhanceLimitBanner" style="display:none; margin-top:16px; background:var(--panel2); border:1px solid var(--accent); border-radius:12px; padding:16px 18px; text-align:center;">
+        <p style="margin:0 0 10px; font-size:14px;">Alcanzaste el límite de tu plan este mes.</p>
+        <a class='btn-primary' href='/dashboard' style='display:inline-block; width:auto; padding:10px 20px; margin:0; text-decoration:none;'>Ver opciones de upgrade</a>
+      </div>
+
+      <div id="enhanceStandaloneCompare" style="display:none; margin-top:14px;"></div>
+    </div>
+  </main>
+
+  <script>
+    const PLAN_DEFS = {
+      empresa: {
+        basico: { limit: 20, priceUsd: 20 },
+        pro: { limit: 100, priceUsd: 30 },
+        negocio: { limit: null, priceUsd: 40 },
+      },
+      cliente: {
+        basico: { limit: 10, priceUsd: 3 },
+        pro: { limit: 60, priceUsd: 7 },
+      },
+    };
+    const PLAN_LABELS = { basico: "Básico", pro: "Pro", negocio: "Negocio" };
+    const limitLabel = (n) => (n === Infinity ? "sin límite" : n);
+    const usage = { count: 0, limit: Infinity };
+    let selectedFile = null;
+    let currentSession = null;
+
+    const dropzone = document.getElementById("dropzone");
+    const fileInput = document.getElementById("fileInput");
+    const fileChipWrap = document.getElementById("fileChipWrap");
+    const processBtn = document.getElementById("processBtn");
+    const statusLine = document.getElementById("statusLine");
+    const reportCard = document.getElementById("reportCard");
+
+    dropzone.addEventListener("click", () => fileInput.click());
+    dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("dragover"); });
+    dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+    dropzone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropzone.classList.remove("dragover");
+      if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files[0]) setFile(fileInput.files[0]);
+    });
+
+    document.querySelectorAll(".mode-tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".mode-tab").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        const mode = tab.dataset.mode;
+        document.getElementById("checkPanel").style.display = mode === "check" ? "block" : "none";
+        document.getElementById("planchaPanel").style.display = mode === "plancha" ? "block" : "none";
+        document.getElementById("enhancePanel").style.display = mode === "enhance" ? "block" : "none";
+      });
+    });
+
+    // ---- Armador de plancha ----
+    let planchaFiles = [];
+    const planchaDropzone = document.getElementById("planchaDropzone");
+    const planchaFileInput = document.getElementById("planchaFileInput");
+    const planchaFileList = document.getElementById("planchaFileList");
+    const metrosInput = document.getElementById("metrosInput");
+    const planchaBtn = document.getElementById("planchaBtn");
+    const planchaStatusLine = document.getElementById("planchaStatusLine");
+    const planchaReportCard = document.getElementById("planchaReportCard");
+
+    planchaDropzone.addEventListener("click", () => planchaFileInput.click());
+    planchaDropzone.addEventListener("dragover", (e) => { e.preventDefault(); planchaDropzone.classList.add("dragover"); });
+    planchaDropzone.addEventListener("dragleave", () => planchaDropzone.classList.remove("dragover"));
+    planchaDropzone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      planchaDropzone.classList.remove("dragover");
+      addPlanchaFiles(Array.from(e.dataTransfer.files));
+    });
+    planchaFileInput.addEventListener("change", () => {
+      addPlanchaFiles(Array.from(planchaFileInput.files));
+      planchaFileInput.value = "";
+    });
+
+    // cada archivo guarda su propio ancho/alto pedido en cm y, opcionalmente,
+    // la cantidad exacta de veces que se quiere repetir: { file, widthCm, heightCm, qty }
+    function addPlanchaFiles(files) {
+      const valid = files.filter(f => f.type === "image/png" || f.type === "image/jpeg");
+      if (valid.length < files.length) {
+        planchaStatusLine.textContent = "Algunos archivos no son PNG/JPG y se ignoraron.";
+      }
+      const sameSize = sameSizeCheckbox.checked;
+      planchaFiles = planchaFiles.concat(valid.map(f => ({
+        file: f,
+        widthCm: sameSize ? sameSizeWidth.value : "",
+        heightCm: sameSize ? sameSizeHeight.value : "",
+        qty: "",
+      })));
+      renderPlanchaFileList();
+    }
+
+    function renderPlanchaFileList() {
+      const sameSize = sameSizeCheckbox.checked;
+      planchaFileList.innerHTML = planchaFiles.map((item, i) => `
+        <div class="plancha-file-item" style="flex-direction:column; align-items:stretch; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span>🖼️ Diseño ${i + 1}: ${item.file.name} (${(item.file.size / 1024 / 1024).toFixed(1)} MB)</span>
+            <button data-i="${i}" class="remove-plancha-file">✕</button>
+          </div>
+          ${sameSize ? "" : `
+          <div style="display:flex; gap:8px;">
+            <input type="number" data-i="${i}" data-dim="width" class="design-size-input" min="0.5" step="0.1" placeholder="Ancho (cm)" value="${item.widthCm}" style="width:100%; padding:9px 11px; border-radius:8px; border:1px solid var(--border); background:var(--panel); color:var(--text); font-size:13px;" />
+            <input type="number" data-i="${i}" data-dim="height" class="design-size-input" min="0.5" step="0.1" placeholder="Alto (cm)" value="${item.heightCm}" style="width:100%; padding:9px 11px; border-radius:8px; border:1px solid var(--border); background:var(--panel); color:var(--text); font-size:13px;" />
+          </div>`}
+          <input type="number" data-i="${i}" class="design-qty-input" min="1" step="1" placeholder="Repetir exactamente X veces (vacío = automático)" value="${item.qty}" style="width:100%; padding:9px 11px; border-radius:8px; border:1px solid var(--border); background:var(--panel); color:var(--text); font-size:13px;" />
+        </div>
+      `).join("");
+      planchaFileList.querySelectorAll(".remove-plancha-file").forEach(btn => {
+        btn.addEventListener("click", () => {
+          planchaFiles.splice(Number(btn.dataset.i), 1);
+          renderPlanchaFileList();
+        });
+      });
+      planchaFileList.querySelectorAll(".design-size-input").forEach(inp => {
+        inp.addEventListener("input", () => {
+          const i = Number(inp.dataset.i);
+          if (inp.dataset.dim === "width") planchaFiles[i].widthCm = inp.value;
+          else planchaFiles[i].heightCm = inp.value;
+          updatePlanchaBtn();
+        });
+      });
+      planchaFileList.querySelectorAll(".design-qty-input").forEach(inp => {
+        inp.addEventListener("input", () => {
+          planchaFiles[Number(inp.dataset.i)].qty = inp.value;
+          updatePlanchaBtn();
+        });
+      });
+      updatePlanchaBtn();
+    }
+
+    function updatePlanchaBtn() {
+      const metros = parseFloat(metrosInput.value);
+      const allSized = planchaFiles.length > 0 && planchaFiles.every(item => {
+        const w = parseFloat(item.widthCm), h = parseFloat(item.heightCm);
+        return w > 0 && h > 0;
+      });
+      const qtyOk = planchaFiles.every(item => {
+        if (item.qty === "" || item.qty === undefined || item.qty === null) return true;
+        const q = parseInt(item.qty, 10);
+        return Number.isInteger(q) && q >= 1;
+      });
+      planchaBtn.disabled = !allSized || !qtyOk || !metros || metros <= 0 || usage.count >= usage.limit;
+    }
+    metrosInput.addEventListener("input", updatePlanchaBtn);
+
+    const sameSizeCheckbox = document.getElementById("sameSizeCheckbox");
+    const sameSizeInputs = document.getElementById("sameSizeInputs");
+    const sameSizeWidth = document.getElementById("sameSizeWidth");
+    const sameSizeHeight = document.getElementById("sameSizeHeight");
+
+    sameSizeCheckbox.addEventListener("change", () => {
+      sameSizeInputs.style.display = sameSizeCheckbox.checked ? "flex" : "none";
+      if (sameSizeCheckbox.checked) applySameSizeToAll();
+      renderPlanchaFileList();
+    });
+    function applySameSizeToAll() {
+      planchaFiles.forEach(item => {
+        item.widthCm = sameSizeWidth.value;
+        item.heightCm = sameSizeHeight.value;
+      });
+      updatePlanchaBtn();
+    }
+    sameSizeWidth.addEventListener("input", applySameSizeToAll);
+    sameSizeHeight.addEventListener("input", applySameSizeToAll);
+
+    let lastPlanchaJobId = null;
+
+    planchaBtn.addEventListener("click", async () => {
+      if (!currentSession || planchaFiles.length === 0) return;
+      const metros = parseFloat(metrosInput.value);
+      if (!metros || metros <= 0) return;
+      const allSized = planchaFiles.every(item => parseFloat(item.widthCm) > 0 && parseFloat(item.heightCm) > 0);
+      if (!allSized) return;
+
+      planchaBtn.disabled = true;
+      planchaReportCard.style.display = "none";
+      planchaStatusLine.textContent = "Subiendo imágenes...";
+
+      const userId = currentSession.user.id;
+      const timestamp = Date.now();
+
+      try {
+        const inputPaths = [];
+        const designSizes = [];
+        for (let i = 0; i < planchaFiles.length; i++) {
+          const f = planchaFiles[i].file;
+          if (!f || f.size === 0) {
+            throw new Error(`[paso subida ${i}] El archivo "${f ? f.name : "?"}" llegó vacío (0 bytes) desde tu celu/navegador antes de subirlo.`);
+          }
+          const path = `${userId}/originals/${timestamp}-plancha-${i}-${f.name}`;
+          const contentType = f.type || "application/octet-stream";
+          let upErr;
+          try {
+            // leemos el archivo a memoria (ArrayBuffer) antes de subirlo:
+            // evita un bug de Safari/iOS donde fetch() a veces manda el
+            // cuerpo vacío al pasarle un File/Blob directamente.
+            const fileBuffer = await f.arrayBuffer();
+            const res = await supabaseClient.storage.from("print-files").upload(path, fileBuffer, { contentType });
+            upErr = res.error;
+          } catch (netErr) {
+            throw new Error(`[paso subida ${i}, red] ${netErr.message || netErr} (archivo: ${f.name}, ${f.size} bytes, tipo: "${f.type}")`);
+          }
+          if (upErr) throw new Error(`[paso subida ${i}, storage] ${upErr.message} (archivo: ${f.name}, ${f.size} bytes, tipo: "${f.type}")`);
+          inputPaths.push(path);
+          designSizes.push({
+            width_cm: parseFloat(planchaFiles[i].widthCm),
+            height_cm: parseFloat(planchaFiles[i].heightCm),
+            quantity: planchaFiles[i].qty ? parseInt(planchaFiles[i].qty, 10) : null,
+          });
+        }
+
+        const { data: job, error: jobErr } = await supabaseClient
+          .from("print_jobs")
+          .insert({
+            user_id: userId,
+            job_type: "nesting",
+            original_filename: `Plancha (${planchaFiles.length} diseños)`,
+            input_paths: inputPaths,
+            requested_meters: metros,
+            design_sizes: designSizes,
+            remove_background: false,
+            status: "processing",
+          })
+          .select()
+          .single();
+        if (jobErr) throw new Error(`[paso crear trabajo] ${jobErr.message}`);
+
+        lastPlanchaJobId = job.id;
+        planchaStatusLine.textContent = "Armando la plancha...";
+
+        await fetch("/api/build-plancha", {
+          method: "POST",
+          headers: { "content-type": "application/json", Authorization: `Bearer ${currentSession.access_token}` },
+          body: JSON.stringify({ jobId: job.id }),
+        });
+
+        await pollPlanchaJob(job.id);
+      } catch (err) {
+        planchaStatusLine.textContent = "Error: " + (err.message || err);
+        planchaBtn.disabled = false;
+      }
+    });
+
+    async function pollPlanchaJob(jobId, attempt = 0) {
+      if (attempt > 90) {
+        planchaStatusLine.textContent = "Está tardando más de lo esperado. Volvé a la página en unos minutos.";
+        planchaBtn.disabled = false;
+        return;
+      }
+      const { data: job } = await supabaseClient.from("print_jobs").select("*").eq("id", jobId).single();
+      if (!job || job.status === "processing") {
+        setTimeout(() => pollPlanchaJob(jobId, attempt + 1), 2000);
+        return;
+      }
+      if (job.status === "failed") {
+        planchaStatusLine.textContent = job.report?.error || "No se pudo armar la plancha.";
+        planchaBtn.disabled = false;
+        return;
+      }
+
+      usage.count += 1;
+      updatePlanchaBtn();
+      planchaStatusLine.textContent = "¡Listo!";
+      await showPlanchaReport(job);
+    }
+
+    async function showPlanchaReport(job) {
+      const r = job.report || {};
+      const { data: signed } = await supabaseClient.storage.from("print-files").createSignedUrl(job.result_path, 3600);
+      planchaReportCard.style.display = "block";
+      planchaReportCard.innerHTML = `
+        <h3>Reporte de la plancha</h3>
+        <div class="report-row"><span>Diseños subidos</span><span>${r.disenos_subidos || "—"}</span></div>
+        <div class="report-row"><span>Total colocados (con repetición)</span><span>${r.total_colocados || "—"}</span></div>
+        <div class="report-row"><span>Tamaños (cm)</span><span>${(r.tamanos_disenios_cm || []).join(", ") || "—"}</span></div>
+        <div class="report-row"><span>Repeticiones por diseño</span><span>${(r.repeticiones_por_diseno || []).join(", ") || "—"}</span></div>
+        <div class="report-row"><span>Ancho</span><span>${r.ancho_cm || 58} cm</span></div>
+        <div class="report-row"><span>Alto</span><span>${r.alto_cm || "—"} cm</span></div>
+        <div class="report-row"><span>Metros solicitados</span><span>${r.metros_solicitados || "—"} m</span></div>
+        <div class="report-row"><span>Fondo</span><span>${r.fondo_removido ? "Removido de cada diseño ✓" : "Se mantuvo tal cual"}</span></div>
+        <div class="report-row"><span>Separación entre diseños</span><span>${r.separacion_mm || 5} mm</span></div>
+        ${signed?.signedUrl ? `<a class="btn-primary download-btn" href="${signed.signedUrl}" download>⬇ Descargar plancha</a>` : ""}
+      `;
+    }
+
+    function setFile(file) {
+      if (file.type !== "application/pdf") {
+        statusLine.textContent = "Por ahora solo aceptamos archivos PDF.";
+        return;
+      }
+      selectedFile = file;
+      fileChipWrap.innerHTML = `<div class="file-chip"><span>📎 ${file.name} (${(file.size/1024/1024).toFixed(1)} MB)</span></div>`;
+      processBtn.disabled = usage.count >= usage.limit;
+      statusLine.textContent = "";
+      reportCard.style.display = "none";
+    }
+
+    processBtn.addEventListener("click", async () => {
+      if (!selectedFile || !currentSession) return;
+      if (usage.count >= usage.limit) {
+        statusLine.textContent = `Alcanzaste el límite de tu plan (${limitLabel(usage.limit)} archivos este mes).`;
+        document.getElementById("limitBanner").style.display = "block";
+        return;
+      }
+
+      processBtn.disabled = true;
+      reportCard.style.display = "none";
+      statusLine.textContent = "Subiendo archivo...";
+
+      const userId = currentSession.user.id;
+      const originalPath = `${userId}/originals/${Date.now()}-${selectedFile.name}`;
+
+      try {
+        // leemos el archivo a memoria (ArrayBuffer) antes de subirlo: evita
+        // un bug de Safari/iOS donde fetch() a veces manda el cuerpo vacío
+        // al pasarle un File/Blob directamente.
+        const fileBuffer = await selectedFile.arrayBuffer();
+        const { error: upErr } = await supabaseClient.storage
+          .from("print-files")
+          .upload(originalPath, fileBuffer, { contentType: "application/pdf" });
+        if (upErr) throw upErr;
+
+        const { data: job, error: jobErr } = await supabaseClient
+          .from("print_jobs")
+          .insert({ user_id: userId, job_type: "check", original_filename: selectedFile.name, original_path: originalPath, status: "processing" })
+          .select()
+          .single();
+        if (jobErr) throw jobErr;
+
+        statusLine.textContent = "Procesando archivo (puede tardar unos segundos)...";
+
+        await fetch("/api/process-check", {
+          method: "POST",
+          headers: { "content-type": "application/json", Authorization: `Bearer ${currentSession.access_token}` },
+          body: JSON.stringify({ jobId: job.id }),
+        });
+
+        await pollJob(job.id);
+      } catch (err) {
+        statusLine.textContent = "Error: " + (err.message || err);
+        processBtn.disabled = false;
+      }
+    });
+
+    async function pollJob(jobId, attempt = 0) {
+      if (attempt > 40) {
+        statusLine.textContent = "Está tardando más de lo esperado. Revisá 'Mi cuenta' en unos minutos.";
+        processBtn.disabled = false;
+        return;
+      }
+      const { data: job } = await supabaseClient.from("print_jobs").select("*").eq("id", jobId).single();
+      if (!job || job.status === "processing") {
+        setTimeout(() => pollJob(jobId, attempt + 1), 2000);
+        return;
+      }
+      processBtn.disabled = usage.count + 1 >= usage.limit;
+      if (job.status === "failed") {
+        statusLine.textContent = "No pudimos procesar el archivo: " + (job.report?.error || "error desconocido");
+        return;
+      }
+
+      usage.count += 1;
+      updatePlanChip();
+      statusLine.textContent = "¡Listo!";
+      showReport(job);
+    }
+
+    let lastCompletedJobId = null;
+
+    async function showReport(job) {
+      lastCompletedJobId = job.id;
+      const r = job.report || {};
+      const { data: signed } = await supabaseClient.storage
+        .from("print-files")
+        .createSignedUrl(job.result_path, 3600);
+
+      reportCard.style.display = "block";
+      reportCard.innerHTML = `
+        <h3>Reporte del archivo</h3>
+        <div class="report-row"><span>Resolución de salida</span><span>${r.resolucion_ppi || "—"} PPI</span></div>
+        <div class="report-row"><span>Tamaño original</span><span>${r.tamano_original_mm?.ancho || "—"} x ${r.tamano_original_mm?.alto || "—"} mm</span></div>
+        <div class="report-row"><span>Sangrado agregado</span><span>${r.sangrado_agregado_mm || 0} mm</span></div>
+        <div class="report-row"><span>Tamaño final</span><span>${r.tamano_final_mm?.ancho || "—"} x ${r.tamano_final_mm?.alto || "—"} mm</span></div>
+        <div class="report-row"><span>Efectos/capas</span><span>${r.efectos_aplanados ? "Aplanados ✓" : "—"}</span></div>
+        ${r.color_nota ? `<div class="report-row"><span>Color</span><span style="text-align:right; max-width:220px;">${r.color_nota}</span></div>` : ""}
+        ${signed?.signedUrl ? `<a class="btn-primary download-btn" href="${signed.signedUrl}" download>⬇ Descargar archivo corregido</a>` : ""}
+        <button class="btn-secondary" id="enhanceBtn" style="width:100%; margin-top:10px;">✨ Mejorar imagen con IA</button>
+        <div id="enhanceStatus" style="font-size:13px; color:var(--muted); text-align:center; margin-top:10px;"></div>
+        <div id="enhanceCompare" style="display:none; margin-top:14px;"></div>
+      `;
+
+      document.getElementById("enhanceBtn").addEventListener("click", startEnhance);
+    }
+
+    async function startEnhance() {
+      if (!lastCompletedJobId || !currentSession) return;
+      const btn = document.getElementById("enhanceBtn");
+      const statusEl = document.getElementById("enhanceStatus");
+      btn.disabled = true;
+      statusEl.textContent = "Mejorando la imagen con IA (puede tardar hasta 1 minuto)...";
+
+      try {
+        await fetch("/api/enhance-image", {
+          method: "POST",
+          headers: { "content-type": "application/json", Authorization: `Bearer ${currentSession.access_token}` },
+          body: JSON.stringify({ jobId: lastCompletedJobId }),
+        });
+        await pollEnhance(lastCompletedJobId);
+      } catch (err) {
+        statusEl.textContent = "Error: " + (err.message || err);
+        btn.disabled = false;
+      }
+    }
+
+    async function pollEnhance(jobId, attempt = 0) {
+      const statusEl = document.getElementById("enhanceStatus");
+      const btn = document.getElementById("enhanceBtn");
+      if (attempt > 140) {
+        statusEl.textContent = "Está tardando más de lo esperado (archivos grandes pueden tardar varios minutos). Volvé a la página en un rato — el resultado va a estar guardado.";
+        btn.disabled = false;
+        return;
+      }
+
+      const { data: job } = await supabaseClient.from("print_jobs").select("*").eq("id", jobId).single();
+
+      if (job && job.enhanced_status === "done") {
+        statusEl.textContent = "¡Comparación lista! Elegí la versión que prefieras.";
+        btn.style.display = "none";
+        await showEnhanceCompare(job.enhance_report);
+        return;
+      }
+
+      if (job && job.enhanced_status === "failed") {
+        statusEl.textContent = "No se pudo mejorar la imagen: " + (job.enhance_report?.error || "error desconocido");
+        btn.disabled = false;
+        return;
+      }
+
+      // null (todavía no arrancó) o "processing": seguimos esperando
+      setTimeout(() => pollEnhance(jobId, attempt + 1), 2000);
+    }
+
+    async function showEnhanceCompare(report, boxId = "enhanceCompare") {
+      const box = document.getElementById(boxId);
+      const [before, after, pdf] = await Promise.all([
+        supabaseClient.storage.from("print-files").createSignedUrl(report.before_path, 3600),
+        supabaseClient.storage.from("print-files").createSignedUrl(report.after_path, 3600),
+        supabaseClient.storage.from("print-files").createSignedUrl(report.enhanced_pdf_path, 3600),
+      ]);
+
+      box.style.display = "block";
+      box.innerHTML = `
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div>
+            <p style="font-size:12px; color:var(--muted); margin:0 0 6px;">Antes</p>
+            <img src="${before.data?.signedUrl}" style="width:100%; border-radius:8px; border:1px solid var(--border);" />
+          </div>
+          <div>
+            <p style="font-size:12px; color:var(--muted); margin:0 0 6px;">Después (IA)</p>
+            <img src="${after.data?.signedUrl}" style="width:100%; border-radius:8px; border:1px solid var(--accent);" />
+          </div>
+        </div>
+        <p style="font-size:12px; color:var(--muted); margin:14px 0 0;">
+          La IA puede mejorar nitidez y color, pero no puede inventar detalle que la imagen original nunca tuvo — comparala bien antes de imprimir.
+        </p>
+        ${report.imprimible_300dpi_cm ? `
+        <div class="report-row"><span>Calidad</span><span>300 dpi (escalado ${report.upscale_factor || "—"})</span></div>
+        <div class="report-row"><span>Tamaño imprimible sin perder calidad</span><span>${report.imprimible_300dpi_cm.ancho} x ${report.imprimible_300dpi_cm.alto} cm</span></div>
+        <div class="report-row"><span>Fondo</span><span>${report.fondo_removido ? "Removido ✓" : "Se mantuvo tal cual"}</span></div>
+        ` : ""}
+        ${pdf.data?.signedUrl ? `<a class="btn-primary download-btn" href="${pdf.data.signedUrl}" download>⬇ Descargar versión mejorada con IA</a>` : ""}
+      `;
+    }
+
+    // ---- Mejora con IA (pestaña independiente, subís la imagen directo) ----
+    let selectedEnhanceFile = null;
+    const enhanceDropzone = document.getElementById("enhanceDropzone");
+    const enhanceFileInput = document.getElementById("enhanceFileInput");
+    const enhanceFileChipWrap = document.getElementById("enhanceFileChipWrap");
+    const enhanceStandaloneBtn = document.getElementById("enhanceStandaloneBtn");
+    const enhanceStandaloneStatus = document.getElementById("enhanceStandaloneStatus");
+
+    enhanceDropzone.addEventListener("click", () => enhanceFileInput.click());
+    enhanceDropzone.addEventListener("dragover", (e) => { e.preventDefault(); enhanceDropzone.classList.add("dragover"); });
+    enhanceDropzone.addEventListener("dragleave", () => enhanceDropzone.classList.remove("dragover"));
+    enhanceDropzone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      enhanceDropzone.classList.remove("dragover");
+      if (e.dataTransfer.files[0]) setEnhanceFile(e.dataTransfer.files[0]);
+    });
+    enhanceFileInput.addEventListener("change", () => {
+      if (enhanceFileInput.files[0]) setEnhanceFile(enhanceFileInput.files[0]);
+    });
+
+    function setEnhanceFile(file) {
+      if (file.type !== "image/png" && file.type !== "image/jpeg") {
+        enhanceStandaloneStatus.textContent = "Por ahora solo aceptamos imágenes PNG o JPG.";
+        return;
+      }
+      selectedEnhanceFile = file;
+      enhanceFileChipWrap.innerHTML = `<div class="file-chip"><span>🖼️ ${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)</span></div>`;
+      enhanceStandaloneBtn.disabled = usage.count >= usage.limit;
+      enhanceStandaloneStatus.textContent = "";
+      document.getElementById("enhanceStandaloneCompare").style.display = "none";
+    }
+
+    enhanceStandaloneBtn.addEventListener("click", async () => {
+      if (!selectedEnhanceFile || !currentSession) return;
+      if (usage.count >= usage.limit) {
+        enhanceStandaloneStatus.textContent = `Alcanzaste el límite de tu plan (${limitLabel(usage.limit)} archivos este mes).`;
+        document.getElementById("enhanceLimitBanner").style.display = "block";
+        return;
+      }
+
+      enhanceStandaloneBtn.disabled = true;
+      document.getElementById("enhanceStandaloneCompare").style.display = "none";
+      enhanceStandaloneStatus.textContent = "Subiendo imagen...";
+
+      const userId = currentSession.user.id;
+      const originalPath = `${userId}/originals/${Date.now()}-${selectedEnhanceFile.name}`;
+
+      try {
+        const fileBuffer = await selectedEnhanceFile.arrayBuffer();
+        const { error: upErr } = await supabaseClient.storage
+          .from("print-files")
+          .upload(originalPath, fileBuffer, { contentType: selectedEnhanceFile.type });
+        if (upErr) throw upErr;
+
+        const { data: job, error: jobErr } = await supabaseClient
+          .from("print_jobs")
+          .insert({
+            user_id: userId,
+            job_type: "enhance",
+            original_filename: selectedEnhanceFile.name,
+            original_path: originalPath,
+            remove_background: document.getElementById("enhanceRemoveBgCheckbox").checked,
+            status: "processing",
+          })
+          .select()
+          .single();
+        if (jobErr) throw jobErr;
+
+        enhanceStandaloneStatus.textContent = "Mejorando la imagen con IA (puede tardar hasta 1 minuto)...";
+
+        await fetch("/api/enhance-image", {
+          method: "POST",
+          headers: { "content-type": "application/json", Authorization: `Bearer ${currentSession.access_token}` },
+          body: JSON.stringify({ jobId: job.id }),
+        });
+
+        await pollEnhanceStandalone(job.id);
+      } catch (err) {
+        enhanceStandaloneStatus.textContent = "Error: " + (err.message || err);
+        enhanceStandaloneBtn.disabled = false;
+      }
+    });
+
+    async function pollEnhanceStandalone(jobId, attempt = 0) {
+      if (attempt > 140) {
+        enhanceStandaloneStatus.textContent = "Está tardando más de lo esperado (archivos grandes pueden tardar varios minutos). Volvé a la página en un rato — el resultado va a estar guardado.";
+        enhanceStandaloneBtn.disabled = false;
+        return;
+      }
+
+      const { data: job } = await supabaseClient.from("print_jobs").select("*").eq("id", jobId).single();
+
+      if (job && job.enhanced_status === "done") {
+        usage.count += 1;
+        updatePlanChip();
+        enhanceStandaloneStatus.textContent = "¡Listo! Elegí la versión que prefieras.";
+        enhanceStandaloneBtn.disabled = usage.count >= usage.limit;
+        await showEnhanceCompare(job.enhance_report, "enhanceStandaloneCompare");
+        return;
+      }
+
+      if (job && job.enhanced_status === "failed") {
+        enhanceStandaloneStatus.textContent = "No se pudo mejorar la imagen: " + (job.enhance_report?.error || "error desconocido");
+        enhanceStandaloneBtn.disabled = false;
+        return;
+      }
+
+      setTimeout(() => pollEnhanceStandalone(jobId, attempt + 1), 2000);
+    }
+
+    let planLabelText = "";
+    function updatePlanChip() {
+      const chip = document.getElementById("planChip");
+      if (!chip) return;
+      chip.textContent = `${planLabelText} · ${usage.count}/${limitLabel(usage.limit)} este mes`;
+      if (usage.count >= usage.limit) chip.classList.add("warn");
+    }
+
+    async function initAccess() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) {
+        window.location.href = "login.html";
+        return;
+      }
+      currentSession = session;
+
+      const { data: profile, error } = await supabaseClient.from("profiles").select("*").eq("id", session.user.id).single();
+      if (error || !profile) {
+        document.getElementById("blockTitle").textContent = "No pudimos cargar tu cuenta";
+        document.getElementById("blockText").textContent = "Volvé a intentar en unos segundos.";
+        document.getElementById("blockScreen").style.display = "";
+        return;
+      }
+
+      document.getElementById("topbar").style.display = "";
+      document.getElementById("userEmail").textContent = session.user.email;
+      document.getElementById("logoutBtn").addEventListener("click", async () => {
+        await supabaseClient.auth.signOut();
+        window.location.href = "login.html";
+      });
+
+      const isOwner = session.user.email === "vercesanty@gmail.com";
+      const planDef = (PLAN_DEFS[profile.account_type] || PLAN_DEFS.cliente)[profile.plan] || PLAN_DEFS.cliente.basico;
+      usage.limit = isOwner ? Infinity : (planDef.limit === null ? Infinity : planDef.limit);
+      const now = new Date();
+      let blocked = null;
+
+      if (isOwner) {
+        // el dueño de la cuenta nunca queda bloqueado ni limitado
+      } else if (profile.subscription_status === "canceled") {
+        blocked = { title: "Tu suscripción está cancelada", text: "Reactivá tu plan desde tu cuenta para seguir usando Vercex Archivo." };
+      } else if (profile.subscription_status === "past_due") {
+        blocked = { title: "Tu pago no se pudo procesar", text: "Actualizá tu método de pago desde tu cuenta para recuperar el acceso." };
+      } else if (profile.subscription_status === "trialing" && new Date(profile.trial_ends_at) < now) {
+        blocked = { title: "Tu prueba gratuita terminó", text: "Elegí un plan desde tu cuenta para seguir usando Vercex Archivo." };
+      }
+
+      if (blocked) {
+        document.getElementById("blockTitle").textContent = blocked.title;
+        document.getElementById("blockText").textContent = blocked.text;
+        document.getElementById("blockScreen").style.display = "";
+        return;
+      }
+
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const { count } = await supabaseClient
+        .from("print_jobs")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", session.user.id)
+        .gte("created_at", startOfMonth);
+      usage.count = count || 0;
+
+      const accountTypeLabel = profile.account_type === "empresa" ? "Empresa" : "Cliente";
+      planLabelText = `${accountTypeLabel} · ${PLAN_LABELS[profile.plan] || profile.plan}`;
+      const chip = document.getElementById("planChip");
+      chip.textContent = `${planLabelText} · ${usage.count}/${limitLabel(usage.limit)} este mes`;
+      if (usage.count >= usage.limit) chip.classList.add("warn");
+
+      document.getElementById("appRoot").style.display = "";
+      if (usage.count >= usage.limit) {
+        processBtn.disabled = true;
+        statusLine.textContent = `Alcanzaste el límite de tu plan (${limitLabel(usage.limit)} archivos este mes).`;
+        document.getElementById("limitBanner").style.display = "block";
+        document.getElementById("planchaLimitBanner").style.display = "block";
+      }
+      updatePlanchaBtn();
+    }
+
+    initAccess();
+  </script>
+  <script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(function(){});}</script>
+</body>
+</html>

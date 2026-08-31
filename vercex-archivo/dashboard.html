@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vercex Archivo — Mi cuenta</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="favicon-32.png" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="theme-color" content="#0a0a0d" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0a0d;
+    --panel: #15121b;
+    --border: #2a2432;
+    --text: #f5f2f6;
+    --muted: #a39aa8;
+    --accent: #ff2d87;
+    --accent2: #2f6bff;
+    --accent-grad: linear-gradient(135deg, #ff2d87, #2f6bff);
+    --warn: #ffb84d;
+    --error: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 18px; margin: 0; }
+  header a { color: var(--muted); text-decoration: none; font-size: 13px; cursor: pointer; }
+  main { max-width: 900px; margin: 0 auto; padding: 32px 24px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+  @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+  }
+  .card h3 { margin: 0 0 12px; font-size: 14px; color: var(--muted); font-weight: 500; }
+  .plan-name { font-size: 22px; font-weight: 600; text-transform: capitalize; }
+  .status-pill {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+  }
+  .status-trialing { background: rgba(255,45,135,0.12); color: var(--accent); }
+  .status-active { background: rgba(255,45,135,0.12); color: var(--accent); }
+  .status-past_due { background: rgba(255,184,77,0.12); color: var(--warn); }
+  .status-canceled { background: rgba(255,107,107,0.12); color: var(--error); }
+  button {
+    padding: 9px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    margin-top: 14px;
+  }
+  button.primary { background: var(--accent-grad); color: #fff; border: none; font-weight: 600; }
+  section h2 { font-size: 16px; margin-bottom: 12px; }
+  .landing-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+  .empty { color: var(--muted); font-size: 14px; padding: 20px 0; }
+</style>
+</head>
+<body>
+  <header>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <img src="vercex-studio-logo.png" alt="Vercex Studio" style="height:26px; width:auto;" />
+      <h1>Vercex Archivo</h1>
+    </div>
+    <div>
+      <a href='/' style='color: var(--accent); margin-right: 16px;'>+ Nuevo archivo</a>
+      <span id="userEmail" style="color: var(--muted); font-size: 13px; margin-right: 16px;"></span>
+      <a id="logoutBtn">Cerrar sesión</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="grid">
+      <div class="card">
+        <h3>Tu plan</h3>
+        <div class="plan-name" id="planName">—</div>
+        <span class="status-pill" id="statusPill">—</span>
+        <div>
+          <button class="primary" id="changePlanBtn">Ver planes</button>
+        </div>
+        <div id="planOptions" style="display:none; margin-top: 14px;"></div>
+      </div>
+      <div class="card">
+        <h3>Estado de la prueba / pago</h3>
+        <div id="trialInfo" style="font-size: 14px; color: var(--muted);">—</div>
+      </div>
+    </div>
+
+    <section>
+      <h2>Tus archivos procesados</h2>
+      <div id="jobsList">
+        <div class="empty">Cargando...</div>
+      </div>
+    </section>
+  </main>
+
+  <script src="supabase-config.js"></script>
+  <script>
+    const planLabels = { basico: "Básico", pro: "Pro", negocio: "Negocio" };
+    const PLAN_DEFS = {
+      empresa: {
+        basico: { limit: 20, priceUsd: 20 },
+        pro: { limit: 100, priceUsd: 30 },
+        negocio: { limit: null, priceUsd: 40 },
+      },
+      cliente: {
+        basico: { limit: 10, priceUsd: 3 },
+        pro: { limit: 60, priceUsd: 7 },
+      },
+    };
+
+    async function init() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      document.getElementById("userEmail").textContent = session.user.email;
+      document.getElementById("logoutBtn").addEventListener("click", async () => {
+        await supabaseClient.auth.signOut();
+        window.location.href = "login.html";
+      });
+
+      const { data: profile, error } = await supabaseClient
+        .from("profiles")
+        .select("*")
+        .eq("id", session.user.id)
+        .single();
+
+      if (error) {
+        document.getElementById("planName").textContent = "Error al cargar perfil";
+        return;
+      }
+
+      const accountTypeLabel = profile.account_type === "empresa" ? "Empresa" : "Cliente";
+      document.getElementById("planName").textContent = `${accountTypeLabel} · ${planLabels[profile.plan] || profile.plan}`;
+      const planDef = (PLAN_DEFS[profile.account_type] || PLAN_DEFS.cliente)[profile.plan];
+      if (planDef) {
+        const limitText = planDef.limit === null ? "archivos ilimitados" : `hasta ${planDef.limit} archivos/mes`;
+        document.getElementById("planName").insertAdjacentHTML(
+          "afterend",
+          `<div style="font-size:13px;color:var(--muted);margin-top:2px;">${limitText} · USD ${planDef.priceUsd}/mes</div>`
+        );
+      }
+
+      document.getElementById("changePlanBtn").addEventListener("click", () => {
+        const box = document.getElementById("planOptions");
+        const isOpen = box.style.display === "block";
+        if (isOpen) { box.style.display = "none"; return; }
+
+        const defs = PLAN_DEFS[profile.account_type] || PLAN_DEFS.cliente;
+        const rows = Object.entries(defs).map(([planKey, def]) => {
+          // "Plan actual" solo si ya lo tiene PAGO y activo — durante la
+          // prueba gratuita (o si el pago falló/se canceló) profile.plan
+          // puede coincidir con este plan sin que lo haya pagado todavía,
+          // así que igual tiene que poder aparecer el botón para suscribirse.
+          const isCurrent = planKey === profile.plan && profile.subscription_status === "active";
+          const limitText = def.limit === null ? "archivos ilimitados" : `hasta ${def.limit} archivos/mes`;
+          return `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border);">
+              <div>
+                <strong>${planLabels[planKey]}</strong>
+                <div style="font-size:12px; color:var(--muted);">${limitText} · USD ${def.priceUsd}/mes</div>
+              </div>
+              ${isCurrent
+                ? `<span style="font-size:12px; color:var(--accent);">Plan actual</span>`
+                : `<button class="subscribe-btn" data-plan="${planKey}" style="background:var(--accent-grad); color:#fff; border:none; border-radius:8px; padding:8px 14px; font-size:12px; font-weight:600; cursor:pointer;">Suscribirme</button>`}
+            </div>`;
+        }).join("");
+
+        box.innerHTML = `
+          <div style="background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:14px 16px;">
+            ${rows}
+            <p style="font-size:12px; color:var(--muted); margin:12px 0 0;">
+              El monto en pesos se calcula con el dólar oficial del día en que te suscribís, y se actualiza automáticamente antes de cada cobro mensual.
+            </p>
+            <div id="subscribeStatus" style="font-size:12px; color:var(--muted); margin-top:8px;"></div>
+          </div>`;
+        box.style.display = "block";
+
+        box.querySelectorAll(".subscribe-btn").forEach(b => {
+          b.addEventListener("click", async () => {
+            const statusEl = document.getElementById("subscribeStatus");
+            b.disabled = true;
+            statusEl.textContent = "Generando el link de pago...";
+            try {
+              const { data: { session } } = await supabaseClient.auth.getSession();
+              const resp = await fetch("/api/create-subscription", {
+                method: "POST",
+                headers: { "content-type": "application/json", Authorization: `Bearer ${session.access_token}` },
+                body: JSON.stringify({ plan: b.dataset.plan }),
+              });
+              const data = await resp.json();
+              if (!resp.ok || !data.init_point) throw new Error(data.error || "No se pudo generar el pago");
+              window.location.href = data.init_point;
+            } catch (err) {
+              statusEl.textContent = "Error: " + (err.message || err);
+              b.disabled = false;
+            }
+          });
+        });
+      });
+
+      const pill = document.getElementById("statusPill");
+      pill.textContent = {
+        trialing: "En prueba gratuita",
+        active: "Al día",
+        past_due: "Pago pendiente",
+        canceled: "Cancelado"
+      }[profile.subscription_status] || profile.subscription_status;
+      pill.className = "status-pill status-" + profile.subscription_status;
+
+      const trialInfo = document.getElementById("trialInfo");
+      if (profile.subscription_status === "trialing") {
+        const end = new Date(profile.trial_ends_at);
+        const daysLeft = Math.max(0, Math.ceil((end - new Date()) / (1000 * 60 * 60 * 24)));
+        trialInfo.textContent = `Te quedan ${daysLeft} día${daysLeft === 1 ? "" : "s"} de prueba gratuita. Termina el ${end.toLocaleDateString("es-AR")}.`;
+      } else if (profile.subscription_status === "past_due") {
+        trialInfo.textContent = "Tu último pago no se pudo procesar. Actualizá tu método de pago para no perder acceso.";
+      } else if (profile.subscription_status === "active") {
+        trialInfo.textContent = "Tu suscripción está activa.";
+      } else {
+        trialInfo.textContent = "Tu suscripción está cancelada.";
+      }
+
+      const { data: jobs } = await supabaseClient
+        .from("print_jobs")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      const jobTypeLabels = { check: "Revisión/corrección", nesting: "Plancha armada", enhance: "Corrección de IA" };
+      const statusLabels = { processing: "Procesando...", done: "Listo", failed: "Falló" };
+      const list = document.getElementById("jobsList");
+      if (!jobs || jobs.length === 0) {
+        list.innerHTML = '<div class="empty">Todavía no procesaste ningún archivo.</div>';
+      } else {
+        list.innerHTML = jobs.map((j, i) => {
+          const expired = j.status === "done" && !j.result_path;
+          const statusText = expired ? "Vencido (archivo borrado a los 20 días)" : (statusLabels[j.status] || j.status);
+          return `
+          <div class="landing-item">
+            <span>${j.original_filename || "Sin nombre"} — ${jobTypeLabels[j.job_type] || j.job_type} — ${new Date(j.created_at).toLocaleDateString("es-AR")} — ${statusText}</span>
+            ${j.status === "done" && j.result_path ? `<button class="download-job-btn" data-i="${i}" style="padding:6px 12px; font-size:12px;">⬇ Descargar</button>` : ""}
+          </div>
+        `;
+        }).join("");
+
+        list.querySelectorAll(".download-job-btn").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            const job = jobs[Number(btn.dataset.i)];
+            const { data: signed } = await supabaseClient.storage.from("print-files").createSignedUrl(job.result_path, 3600);
+            if (signed?.signedUrl) window.open(signed.signedUrl, "_blank");
+          });
+        });
+      }
+    }
+
+    init();
+  </script>
+  <script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(function(){});}</script>
+</body>
+</html>

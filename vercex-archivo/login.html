@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vercex Archivo — Acceso</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="favicon-32.png" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="theme-color" content="#0a0a0d" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0a0d;
+    --panel: #15121b;
+    --border: #2a2432;
+    --text: #f5f2f6;
+    --muted: #a39aa8;
+    --accent: #ff2d87;
+    --accent2: #2f6bff;
+    --accent-grad: linear-gradient(135deg, #ff2d87, #2f6bff);
+    --error: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    padding: 24px;
+  }
+  .card {
+    width: 100%;
+    max-width: 380px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+  }
+  h1 {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-size: 24px;
+    margin: 0 0 4px;
+  }
+  p.sub { color: var(--muted); margin: 0 0 24px; font-size: 14px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 14px;
+    border: 1px solid transparent;
+  }
+  .tab.active { background: rgba(255,45,135,0.1); color: var(--accent); border-color: var(--accent); }
+  .type-row { display: flex; gap: 8px; margin: 14px 0 6px; }
+  .type-btn {
+    flex: 1; padding: 12px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--border); text-align: center; transition: all .15s ease;
+  }
+  .type-btn strong { display: block; font-size: 14px; }
+  .type-btn span { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .type-btn.active { border-color: var(--accent); background: rgba(255,45,135,0.08); }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 14px 0 6px; }
+  input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #0a0c0b;
+    color: var(--text);
+    font-size: 14px;
+  }
+  input:focus { outline: none; border-color: var(--accent); }
+  button.primary {
+    width: 100%;
+    margin-top: 22px;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent-grad);
+    color: #fff;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  button.primary:disabled { opacity: 0.6; cursor: default; }
+  .msg { margin-top: 16px; font-size: 13px; text-align: center; }
+  .msg.error { color: var(--error); }
+  .msg.ok { color: var(--accent); }
+  .trial-note { margin-top: 20px; font-size: 12px; color: var(--muted); text-align: center; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
+      <img src="vercex-studio-logo.png" alt="Vercex Studio" style="height:26px; width:auto;" />
+      <h1 style="margin:0;">Vercex Archivo</h1>
+    </div>
+    <p class="sub">Corrección y armado de archivos para imprenta</p>
+
+    <div class="tabs">
+      <div class="tab active" data-mode="login">Iniciar sesión</div>
+      <div class="tab" data-mode="signup">Crear cuenta</div>
+    </div>
+
+    <div class="type-row" id="typeRow" style="display:none;">
+      <div class="type-btn active" data-type="cliente">
+        <strong>Cliente</strong>
+        <span>Subís tus propios diseños</span>
+      </div>
+      <div class="type-btn" data-type="empresa">
+        <strong>Empresa</strong>
+        <span>Sos una gráfica/imprenta</span>
+      </div>
+    </div>
+
+    <form id="authForm">
+      <label for="businessName" id="businessNameLabel" style="display:none;">Nombre de la gráfica/negocio</label>
+      <input type="text" id="businessName" style="display:none;" placeholder="Ej: Gráfica Textil Sur" />
+
+      <label for="razonSocial" id="razonSocialLabel" style="display:none;">Razón social</label>
+      <input type="text" id="razonSocial" style="display:none;" placeholder="Ej: Gráfica Textil Sur S.R.L." />
+
+      <label for="cuit" id="cuitLabel" style="display:none;">CUIT</label>
+      <input type="text" id="cuit" style="display:none;" placeholder="Ej: 30-12345678-9" />
+
+      <label for="email">Email</label>
+      <input type="email" id="email" required placeholder="vos@tuemail.com" />
+
+      <label for="password">Contraseña</label>
+      <input type="password" id="password" required minlength="6" placeholder="Mínimo 6 caracteres" />
+
+      <button type="submit" class="primary" id="submitBtn">Iniciar sesión</button>
+    </form>
+
+    <div id="msg" class="msg"></div>
+    <div class="trial-note" id="trialNote" style="display:none;">
+      5 días de prueba gratis, sin tarjeta.
+    </div>
+  </div>
+
+  <script src="supabase-config.js"></script>
+  <script>
+    let mode = "login";
+    let accountType = "cliente";
+    const tabs = document.querySelectorAll(".tab");
+    const typeRow = document.getElementById("typeRow");
+    const typeBtns = document.querySelectorAll(".type-btn");
+    const submitBtn = document.getElementById("submitBtn");
+    const msgEl = document.getElementById("msg");
+    const trialNote = document.getElementById("trialNote");
+    const businessNameInput = document.getElementById("businessName");
+    const businessNameLabel = document.getElementById("businessNameLabel");
+    const razonSocialInput = document.getElementById("razonSocial");
+    const razonSocialLabel = document.getElementById("razonSocialLabel");
+    const cuitInput = document.getElementById("cuit");
+    const cuitLabel = document.getElementById("cuitLabel");
+
+    function updateEmpresaFields() {
+      const showEmpresa = mode === "signup" && accountType === "empresa";
+      razonSocialInput.style.display = showEmpresa ? "block" : "none";
+      razonSocialLabel.style.display = showEmpresa ? "block" : "none";
+      cuitInput.style.display = showEmpresa ? "block" : "none";
+      cuitLabel.style.display = showEmpresa ? "block" : "none";
+      razonSocialInput.required = showEmpresa;
+      cuitInput.required = showEmpresa;
+    }
+
+    typeBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        typeBtns.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        accountType = btn.dataset.type;
+        updateEmpresaFields();
+      });
+    });
+
+    tabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        tabs.forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        mode = tab.dataset.mode;
+        const isSignup = mode === "signup";
+        submitBtn.textContent = isSignup ? "Crear cuenta" : "Iniciar sesión";
+        trialNote.style.display = isSignup ? "block" : "none";
+        typeRow.style.display = isSignup ? "flex" : "none";
+        businessNameInput.style.display = isSignup ? "block" : "none";
+        businessNameLabel.style.display = isSignup ? "block" : "none";
+        updateEmpresaFields();
+        msgEl.textContent = "";
+      });
+    });
+
+    document.getElementById("authForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const businessName = businessNameInput.value.trim();
+      const razonSocial = razonSocialInput.value.trim();
+      const cuit = cuitInput.value.trim();
+
+      submitBtn.disabled = true;
+      msgEl.textContent = "";
+      msgEl.className = "msg";
+
+      try {
+        if (mode === "signup") {
+          const { data, error } = await supabaseClient.auth.signUp({
+            email,
+            password,
+            options: { data: { business_name: businessName, account_type: accountType } }
+          });
+          if (error) throw error;
+
+          if (data.user) {
+            const updates = { business_name: businessName, account_type: accountType };
+            if (accountType === "empresa") {
+              updates.razon_social = razonSocial;
+              updates.cuit = cuit;
+            }
+            await supabaseClient
+              .from("profiles")
+              .update(updates)
+              .eq("id", data.user.id);
+          }
+
+          if (data.session) {
+            window.location.href = "dashboard.html";
+          } else {
+            msgEl.className = "msg ok";
+            msgEl.textContent = "¡Cuenta creada! Revisá tu email para confirmar antes de iniciar sesión.";
+          }
+        } else {
+          const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+          window.location.href = "dashboard.html";
+        }
+      } catch (err) {
+        msgEl.className = "msg error";
+        msgEl.textContent = err.message === "Invalid login credentials"
+          ? "Email o contraseña incorrectos."
+          : err.message;
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    // si ya hay sesión activa, saltar directo al dashboard
+    supabaseClient.auth.getSession().then(({ data }) => {
+      if (data.session) window.location.href = "dashboard.html";
+    });
+  </script>
+  <script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(function(){});}</script>
+</body>
+</html>

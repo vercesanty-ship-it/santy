@@ -56,6 +56,12 @@ export default async (req) => {
       .single();
     if (jobErr || !job) throw new Error(jobErr?.message || "Trabajo no encontrado.");
 
+    const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+    const { data: userData } = await supabase.auth.getUser(token);
+    if (!userData?.user || userData.user.id !== job.user_id) {
+      return new Response("Forbidden", { status: 403 });
+    }
+
     const inputPaths = job.input_paths || [];
     const designSizes = job.design_sizes || [];
     if (inputPaths.length === 0) throw new Error("El trabajo no tiene imágenes.");
@@ -175,7 +181,7 @@ export default async (req) => {
 
     await supabase
       .from("print_jobs")
-      .update({ status: "completed", result_path: resultPath, report })
+      .update({ status: "done", result_path: resultPath, report })
       .eq("id", job.id);
   } catch (err) {
     await supabase

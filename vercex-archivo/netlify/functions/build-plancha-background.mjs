@@ -104,6 +104,7 @@ export default async (req) => {
       if (d.qtyExact) for (let n = 0; n < d.qtyExact; n++) exactQueue.push(d);
     }
     while (exactQueue.length > 0 && currentY < maxHeightPx) {
+      exactQueue.sort((a, b) => b.widthPx - a.widthPx); // first-fit decreasing
       const rowItems = [];
       let widthUsed = 0;
       for (let i = 0; i < exactQueue.length; ) {
@@ -123,17 +124,29 @@ export default async (req) => {
     }
 
     // 2) Diseños "automáticos" (sin cantidad pedida): rellenan el material
-    // restante repartiendo turnos entre todos por igual (round-robin).
-    const autoDesigns = designs.filter((d) => !d.qtyExact);
+    // restante. Reparte turnos entre todos por igual (round-robin, para que
+    // no gane siempre el mismo diseño) pero sigue dando vueltas dentro de
+    // cada fila hasta que ya no entre ni una copia más — si no, sobraba
+    // ancho libre cada vez que un diseño angosto compartía fila con uno
+    // ancho, y esa era la "plancha con mucho espacio entre escudos".
+    // Los más anchos primero en cada pasada (first-fit decreasing): así el
+    // hueco que va quedando en cada fila es más chico y más fácil de
+    // rellenar con los diseños angostos que vienen después.
+    const autoDesigns = designs.filter((d) => !d.qtyExact).sort((a, b) => b.widthPx - a.widthPx);
     if (autoDesigns.length > 0) {
       let keepGoing = true;
       while (keepGoing && currentY < maxHeightPx) {
         const rowItems = [];
         let widthUsed = 0;
-        for (const d of autoDesigns) {
-          if (widthUsed + d.widthPx <= SHEET_WIDTH_PX) {
-            rowItems.push(d);
-            widthUsed += d.widthPx + GAP_PX;
+        let addedInPass = true;
+        while (addedInPass) {
+          addedInPass = false;
+          for (const d of autoDesigns) {
+            if (widthUsed + d.widthPx <= SHEET_WIDTH_PX) {
+              rowItems.push(d);
+              widthUsed += d.widthPx + GAP_PX;
+              addedInPass = true;
+            }
           }
         }
         if (rowItems.length === 0) { keepGoing = false; break; }
